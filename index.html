@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EPS — Compositeur d'équipes</title>
+<style>
+:root{--primary:#1a73e8;--dark:#1557b0;--green:#34a853;--red:#ea4335;--yellow:#fbbc04;--bg:#f0f4f9;--card:#fff;--border:#dadce0;--text:#202124;--muted:#5f6368;--girl:#e91e63;--boy:#1565c0;--absent:#fce8e6;--r:12px;--sh:0 2px 8px rgba(0,0,0,.12)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{background:linear-gradient(135deg,#1a73e8,#0d47a1);color:#fff;padding:16px 24px;display:flex;align-items:center;gap:16px;box-shadow:0 2px 10px rgba(0,0,0,.2)}
+header .ico{font-size:32px}
+header h1{font-size:22px;font-weight:700}
+header p{font-size:13px;opacity:.85;margin-top:2px}
+.tabs{display:flex;background:#fff;border-bottom:2px solid var(--border);padding:0 24px;gap:4px;overflow-x:auto}
+.tb{padding:14px 20px;border:none;background:none;cursor:pointer;font-size:14px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.tb:hover{color:var(--primary)}.tb.active{color:var(--primary);border-bottom-color:var(--primary)}
+.badge{background:var(--primary);color:#fff;border-radius:20px;font-size:11px;padding:2px 7px;font-weight:700}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.panel{display:none}.panel.active{display:block}
+.card{background:var(--card);border-radius:var(--r);padding:20px;box-shadow:var(--sh);margin-bottom:20px}
+.ct{font-size:15px;font-weight:700;margin-bottom:16px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+input[type=text],select,input[type=number]{padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none;transition:border-color .2s;background:#fff}
+input[type=text]:focus,select:focus,input[type=number]:focus{border-color:var(--primary)}
+input[type=text]{min-width:180px}
+.gt{display:flex;border:1.5px solid var(--border);border-radius:8px;overflow:hidden}
+.gt input{display:none}
+.gt label{padding:10px 16px;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;display:flex;align-items:center;gap:5px}
+.gt input[value=G]:checked+label{background:var(--boy);color:#fff}
+.gt input[value=F]:checked+label{background:var(--girl);color:#fff}
+.lsel{display:flex;flex-direction:row-reverse;gap:4px}
+.lsel input{display:none}
+.lsel label{cursor:pointer;font-size:24px;color:#dadce0;transition:color .15s;line-height:1}
+.lsel input:checked~label,.lsel label:hover,.lsel label:hover~label{color:var(--yellow)}
+.btn{padding:10px 20px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-b{background:var(--primary);color:#fff}.btn-b:hover{background:var(--dark)}
+.btn-g{background:var(--green);color:#fff}.btn-g:hover{background:#2d9248}
+.btn-r{background:var(--red);color:#fff}
+.btn-sm{padding:6px 12px;font-size:12px}
+.ico-btn{padding:6px 8px;background:none;border:none;cursor:pointer;border-radius:6px;font-size:16px;transition:background .2s}
+.ico-btn:hover{background:var(--bg)}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px}
+.sc{border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px;background:#fff}
+.sc.absent{background:var(--absent);border-color:#f5c6c2;opacity:.75}
+.sc.absent .sname{text-decoration:line-through;color:var(--muted)}
+.gab{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;font-weight:700;color:#fff}
+.gab.G{background:var(--boy)}.gab.F{background:var(--girl)}
+.sinfo{flex:1;min-width:0}
+.sname{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.smeta{font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center;margin-top:2px;flex-wrap:wrap}
+.sact{display:flex;gap:2px;flex-shrink:0}
+.sbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.chip{background:var(--bg);border-radius:20px;padding:6px 14px;font-size:13px;display:flex;align-items:center;gap:6px;font-weight:600}
+.chip strong{color:var(--primary);font-size:16px}
+.set-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.si{display:flex;flex-direction:column;gap:6px}
+.si label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase}
+.tog{display:flex;border:1.5px solid var(--border);border-radius:8px;overflow:hidden}
+.tog input{display:none}
+.tog label{flex:1;padding:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s}
+.tog input:checked+label{background:var(--primary);color:#fff}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.tc{border-radius:12px;overflow:hidden;box-shadow:var(--sh)}
+.th{padding:12px 16px;color:#fff;font-weight:700;font-size:15px;display:flex;justify-content:space-between;align-items:center}
+.tbody{background:#fff}
+.pr{padding:10px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--bg)}
+.pr:last-child{border-bottom:none}
+.pr.sub{background:#fffde7}
+.pnum{width:28px;height:28px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--muted);flex-shrink:0}
+.pr.sub .pnum{background:#fff9c4;color:#f9a825;border:1.5px dashed #f9a825}
+.pname{flex:1;font-size:13px;font-weight:600}
+.sdiv{padding:6px 16px;background:#fff9c4;font-size:11px;font-weight:700;color:#f57f17;text-transform:uppercase;letter-spacing:1px}
+.al{border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:14px;line-height:1.6}
+.al-i{background:#e8f0fe;border:1px solid #aecbfa;color:var(--primary)}
+.al-w{background:var(--absent);border:1px solid #f5c6c2;color:#c62828}
+.sw{display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.sb{position:relative;flex:1;min-width:200px}
+.sb input{width:100%;padding-left:36px}
+.sb::before{content:'🔍';position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none}
+.empty{text-align:center;padding:48px 24px;color:var(--muted)}
+.empty .em{font-size:48px;margin-bottom:12px}
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center}
+.mo.open{display:flex}
+.moc{background:#fff;border-radius:16px;padding:28px;min-width:340px;max-width:480px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.moc h3{font-size:18px;margin-bottom:20px}
+.stab{width:100%;border-collapse:collapse;font-size:13px}
+.stab th{text-align:left;padding:8px 12px;background:var(--bg);font-weight:700;font-size:11px;text-transform:uppercase;color:var(--muted)}
+.stab td{padding:8px 12px;border-bottom:1px solid var(--border)}
+@media(max-width:600px){.content{padding:12px}input[type=text]{min-width:unset;width:100%}}
+@media print{.tabs,header,.btn,.sact,.sw,.card:first-child{display:none!important}.panel.active{display:block!important}body{background:#fff}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="ico">🏃</div>
+  <div>
+    <h1>EPS — Compositeur d'équipes</h1>
+    <p>Gérez votre classe · Équipes équilibrées automatiquement · Numérotation pour les remplacements</p>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tb active" onclick="showTab('eleves')" id="tab-eleves">👥 Élèves <span class="badge" id="b-el">0</span></button>
+  <button class="tb" onclick="showTab('params')" id="tab-params">⚙️ Paramètres</button>
+  <button class="tb" onclick="showTab('equipes')" id="tab-equipes">🏆 Équipes <span class="badge" id="b-eq">0</span></button>
+</div>
+
+<div class="content">
+
+<div class="panel active" id="panel-eleves">
+  <div class="card">
+    <div class="ct">➕ Ajouter un élève</div>
+    <div class="row">
+      <div class="fg">
+        <label>Prénom / Nom</label>
+        <input type="text" id="inp" placeholder="Ex : Marie Dupont" onkeydown="if(event.key==='Enter')add()">
+      </div>
+      <div class="fg">
+        <label>Sexe</label>
+        <div class="gt">
+          <input type="radio" name="sx" id="sg" value="G" checked><label for="sg">♂ Garçon</label>
+          <input type="radio" name="sx" id="sf" value="F"><label for="sf">♀ Fille</label>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Niveau (1 = meilleur)</label>
+        <div class="lsel">
+          <input type="radio" name="nv" id="l5" value="5"><label for="l5" title="Débutant">★</label>
+          <input type="radio" name="nv" id="l4" value="4"><label for="l4">★</label>
+          <input type="radio" name="nv" id="l3" value="3" checked><label for="l3" title="Moyen">★</label>
+          <input type="radio" name="nv" id="l2" value="2"><label for="l2">★</label>
+          <input type="radio" name="nv" id="l1" value="1"><label for="l1" title="Expert">★</label>
+        </div>
+      </div>
+      <div class="fg"><label>&nbsp;</label>
+        <button class="btn btn-b" onclick="add()">➕ Ajouter</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sbar" id="sbar"></div>
+
+  <div class="sw">
+    <div class="sb"><input type="text" id="q" placeholder="Rechercher…" oninput="render()"></div>
+    <select id="fsx" onchange="render()" style="padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px">
+      <option value="">Tous</option><option value="G">♂ Garçons</option><option value="F">♀ Filles</option>
+    </select>
+    <button class="btn btn-sm" style="background:#e8f5e9;color:#2e7d32" onclick="allPresent()">✅ Tous présents</button>
+    <button class="btn btn-sm" style="background:var(--absent);color:var(--red)" onclick="allAbsent()">😴 Tous absents</button>
+    <button class="btn btn-sm btn-r" onclick="resetAll()">🗑️ Vider</button>
+  </div>
+
+  <div class="sgrid" id="list"></div>
+</div>
+
+<div class="panel" id="panel-params">
+  <div class="card">
+    <div class="ct">⚙️ Configuration des équipes</div>
+    <div class="set-grid">
+      <div class="si"><label>Nombre d'équipes</label>
+        <input type="number" id="neq" value="2" min="2" max="8" style="width:100%" oninput="preview()">
+      </div>
+      <div class="si"><label>Remplaçants / équipe</label>
+        <input type="number" id="nrem" value="0" min="0" max="10" style="width:100%" oninput="preview()">
+      </div>
+      <div class="si"><label>Mixité</label>
+        <div class="tog">
+          <input type="radio" name="mix" id="mm" value="mixte" checked><label for="mm">Mixte</label>
+          <input type="radio" name="mix" id="ms" value="sep"><label for="ms">Séparé</label>
+        </div>
+      </div>
+      <div class="si"><label>Répartition</label>
+        <div class="tog">
+          <input type="radio" name="eq" id="en" value="oui" checked><label for="en">Par niveau</label>
+          <input type="radio" name="eq" id="ea" value="non"><label for="ea">Aléatoire</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">📖 Logique de numérotation</div>
+    <div class="al al-i">
+      <strong>Comment fonctionnent les numéros ?</strong><br><br>
+      Les joueurs sont distribués par <em>tirage en serpentin</em> pour équilibrer les niveaux entre équipes. Dans chaque équipe ils sont triés par niveau puis numérotés.<br><br>
+      ▶ Le <strong>joueur n°1</strong> de chaque équipe a un niveau équivalent au <strong>joueur n°1</strong> des autres équipes.<br>
+      ▶ Les remplaçants sont numérotés en continuité : avec 5 titulaires, le remplaçant <strong>n°6</strong> remplace le titulaire <strong>n°1</strong> (même niveau).
+    </div>
+  </div>
+
+  <div id="prev" style="margin-bottom:16px"></div>
+  <div style="text-align:center">
+    <button class="btn btn-g" style="font-size:16px;padding:14px 36px" onclick="compose()">🎲 Composer les équipes</button>
+  </div>
+</div>
+
+<div class="panel" id="panel-equipes">
+  <div id="eqcontent">
+    <div class="empty"><div class="em">⚽</div><p>Aucune équipe composée.<br>Allez dans <strong>Paramètres</strong> et cliquez sur "Composer les équipes".</p></div>
+  </div>
+</div>
+
+</div>
+
+<div class="mo" id="modal" onclick="if(event.target===this)closeM()">
+  <div class="moc">
+    <h3>✏️ Modifier l'élève</h3>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="fg"><label>Prénom / Nom</label><input type="text" id="en2" style="width:100%"></div>
+      <div class="fg"><label>Sexe</label>
+        <div class="gt">
+          <input type="radio" name="esx" id="esg" value="G"><label for="esg">♂ Garçon</label>
+          <input type="radio" name="esx" id="esf" value="F"><label for="esf">♀ Fille</label>
+        </div>
+      </div>
+      <div class="fg"><label>Niveau (1 = meilleur)</label>
+        <div class="lsel">
+          <input type="radio" name="env" id="e5" value="5"><label for="e5">★</label>
+          <input type="radio" name="env" id="e4" value="4"><label for="e4">★</label>
+          <input type="radio" name="env" id="e3" value="3"><label for="e3">★</label>
+          <input type="radio" name="env" id="e2" value="2"><label for="e2">★</label>
+          <input type="radio" name="env" id="e1" value="1"><label for="e1">★</label>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:24px;justify-content:flex-end">
+      <button class="btn" style="background:var(--bg);color:var(--text)" onclick="closeM()">Annuler</button>
+      <button class="btn btn-b" onclick="saveEdit()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let D=JSON.parse(localStorage.getItem('eps')||'[]'), eid=null, EQ=[];
+const COL=['#e53935','#1e88e5','#43a047','#fb8c00','#8e24aa','#00897b','#6d4c41','#f06292'];
+
+function sv(){localStorage.setItem('eps',JSON.stringify(D));}
+function st(n){ return '★'.repeat(6-n)+'☆'.repeat(n-1); }
+function G(id){return document.getElementById(id);}
+
+function showTab(t){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('active'));
+  G('panel-'+t).classList.add('active');
+  G('tab-'+t).classList.add('active');
+  if(t==='params') preview();
+}
+
+function add(){
+  const nom=G('inp').value.trim(); if(!nom){G('inp').focus();return;}
+  const sx=document.querySelector('input[name=sx]:checked').value;
+  const nv=parseInt(document.querySelector('input[name=nv]:checked').value);
+  D.push({id:Date.now(),nom,sx,nv,abs:false});
+  sv(); G('inp').value=''; G('inp').focus(); render();
+}
+
+function render(){
+  const q=(G('q').value||'').toLowerCase(), fs=G('fsx').value;
+  let L=D.filter(e=>e.nom.toLowerCase().includes(q)&&(!fs||e.sx===fs));
+  L.sort((a,b)=>a.abs!==b.abs?(a.abs?1:-1):a.nom.localeCompare(b.nom));
+  const el=G('list');
+  if(!L.length){
+    el.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="em">👀</div><p>Aucun élève trouvé.</p></div>';
+  } else {
+    el.innerHTML=L.map(e=>`
+      <div class="sc ${e.abs?'absent':''}">
+        <div class="gab ${e.sx}">${e.sx==='G'?'♂':'♀'}</div>
+        <div class="sinfo">
+          <div class="sname">${e.nom}</div>
+          <div class="smeta">
+            <span>${e.sx==='G'?'Garçon':'Fille'}</span>
+            <span style="color:var(--yellow)">${st(e.nv)}</span>
+            <span>Niv.${e.nv}</span>
+            ${e.abs?'<span style="color:var(--red);font-weight:700;font-size:11px">ABSENT</span>':''}
+          </div>
+        </div>
+        <div class="sact">
+          <button class="ico-btn" title="${e.abs?'Présent':'Absent'}" onclick="togAbs(${e.id})">${e.abs?'✅':'😴'}</button>
+          <button class="ico-btn" onclick="openEdit(${e.id})">✏️</button>
+          <button class="ico-btn" onclick="del(${e.id})">🗑️</button>
+        </div>
+      </div>`).join('');
+  }
+  const pr=D.filter(e=>!e.abs);
+  G('sbar').innerHTML=`
+    <div class="chip">👥 Total <strong>${D.length}</strong></div>
+    <div class="chip">✅ Présents <strong>${pr.length}</strong></div>
+    <div class="chip" style="color:var(--boy)">♂ <strong>${pr.filter(e=>e.sx==='G').length}</strong></div>
+    <div class="chip" style="color:var(--girl)">♀ <strong>${pr.filter(e=>e.sx==='F').length}</strong></div>
+    <div class="chip" style="color:var(--red)">😴 <strong>${D.filter(e=>e.abs).length}</strong></div>`;
+  G('b-el').textContent=D.length;
+}
+
+function togAbs(id){const e=D.find(x=>x.id===id);if(e){e.abs=!e.abs;sv();render();}}
+function del(id){if(!confirm('Supprimer ?'))return; D=D.filter(x=>x.id!==id);sv();render();}
+function allPresent(){D.forEach(e=>e.abs=false);sv();render();}
+function allAbsent(){D.forEach(e=>e.abs=true);sv();render();}
+function resetAll(){if(!confirm('Supprimer tous les élèves ?'))return; D=[];sv();render();}
+
+function openEdit(id){
+  const e=D.find(x=>x.id===id);if(!e)return; eid=id;
+  G('en2').value=e.nom;
+  document.querySelector(`input[name=esx][value="${e.sx}"]`).checked=true;
+  document.querySelector(`input[name=env][value="${e.nv}"]`).checked=true;
+  G('modal').classList.add('open');
+}
+function closeM(){G('modal').classList.remove('open');eid=null;}
+function saveEdit(){
+  const e=D.find(x=>x.id===eid);if(!e)return;
+  const n=G('en2').value.trim();if(!n)return;
+  e.nom=n; e.sx=document.querySelector('input[name=esx]:checked').value;
+  e.nv=parseInt(document.querySelector('input[name=env]:checked').value);
+  sv();render();closeM();
+}
+
+function preview(){
+  const pr=D.filter(e=>!e.abs), neq=parseInt(G('neq').value)||2, nrem=parseInt(G('nrem').value)||0;
+  const tit=Math.max(0,pr.length-neq*nrem), titEq=Math.floor(tit/neq);
+  G('prev').innerHTML=pr.length<neq
+    ?`<div class="al al-w">⚠️ Pas assez d'élèves présents (${pr.length}) pour ${neq} équipes.</div>`
+    :`<div class="al al-i">👁️ Aperçu : ${neq} équipes de <strong>~${titEq} titulaire(s)</strong> + <strong>${nrem} remplaçant(s)</strong> · ${pr.length} élèves présents</div>`;
+}
+
+function snake(pool,teams,key,n){
+  let dir=1,idx=0;
+  pool.forEach(j=>{
+    teams[idx][key].push({...j});
+    if(dir===1){if(idx<n-1)idx++;else dir=-1;}
+    else{if(idx>0)idx--;else dir=1;}
+  });
+}
+
+function distrib(joueurs,n,nrem,bal){
+  const teams=Array.from({length:n},(_,i)=>({id:i,tit:[],rem:[]}));
+  if(!joueurs.length)return teams;
+  let pool=[...joueurs];
+  if(bal)pool.sort((a,b)=>a.nv-b.nv);else pool.sort(()=>Math.random()-.5);
+  const totalRem=Math.min(n*nrem,Math.max(0,pool.length-n));
+  snake(pool.slice(0,pool.length-totalRem),teams,'tit',n);
+  snake(pool.slice(pool.length-totalRem),teams,'rem',n);
+  teams.forEach(t=>{
+    if(bal){t.tit.sort((a,b)=>a.nv-b.nv);t.rem.sort((a,b)=>a.nv-b.nv);}
+    t.tit.forEach((p,i)=>p.num=i+1);
+    t.rem.forEach((p,i)=>p.num=t.tit.length+i+1);
+  });
+  return teams;
+}
+
+function compose(){
+  const n=parseInt(G('neq').value), nrem=parseInt(G('nrem').value);
+  const mix=document.querySelector('input[name=mix]:checked').value;
+  const bal=document.querySelector('input[name=eq]:checked').value==='oui';
+  const pr=D.filter(e=>!e.abs);
+  if(pr.length<n){alert(`Pas assez d'élèves présents (${pr.length}) pour ${n} équipes.`);return;}
+  if(mix==='mixte'){
+    EQ=distrib(pr,n,nrem,bal);
+  } else {
+    const Gp=pr.filter(e=>e.sx==='G'),Fp=pr.filter(e=>e.sx==='F');
+    const tG=distrib(Gp,n,0,bal),tF=distrib(Fp,n,0,bal);
+    EQ=Array.from({length:n},(_,i)=>({id:i,tit:[...tG[i].tit,...tF[i].tit],rem:[]}));
+    const rG=distrib(Gp,n,nrem,bal).map(t=>t.rem);
+    const rF=distrib(Fp,n,nrem,bal).map(t=>t.rem);
+    EQ.forEach((eq,i)=>{eq.rem=[...rG[i],...rF[i]];});
+    EQ.forEach(eq=>{
+      if(bal){eq.tit.sort((a,b)=>a.nv-b.nv);eq.rem.sort((a,b)=>a.nv-b.nv);}
+      eq.tit.forEach((p,i)=>p.num=i+1);
+      eq.rem.forEach((p,i)=>p.num=eq.tit.length+i+1);
+    });
+  }
+  G('b-eq').textContent=EQ.length;
+  renderEQ();showTab('equipes');
+}
+
+function renderEQ(){
+  if(!EQ.length)return;
+  const pr=D.filter(e=>!e.abs).length,t0=EQ[0]?.tit.length||0,r0=EQ[0]?.rem.length||0;
+  let html=`
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+      <div class="al al-i" style="flex:1;margin:0">✅ <strong>${pr} présents</strong> · ${EQ.length} équipes · ~${t0} titulaire(s) + ${r0} remplaçant(s)/équipe</div>
+      <button class="btn btn-sm" style="background:var(--yellow);color:#333" onclick="compose()">🔀 Recomposer</button>
+      <button class="btn btn-sm btn-b" onclick="window.print()">🖨️ Imprimer</button>
+    </div>
+    <div class="tgrid">`;
+  EQ.forEach((team,i)=>{
+    const col=COL[i%COL.length];
+    const avg=team.tit.length?(team.tit.reduce((s,p)=>s+p.nv,0)/team.tit.length).toFixed(1):'-';
+    const tits=team.tit.map(p=>`
+      <div class="pr">
+        <div class="pnum">${p.num}</div>
+        <div class="pname">${p.nom}</div>
+        <span style="font-size:12px">${p.sx==='G'?'♂':'♀'}</span>
+        <span style="color:var(--yellow);font-size:11px">${st(p.nv)}</span>
+      </div>`).join('');
+    const rems=team.rem.length?`<div class="sdiv">🔄 Remplaçants</div>${team.rem.map(p=>`
+      <div class="pr sub">
+        <div class="pnum">${p.num}</div>
+        <div class="pname">${p.nom}</div>
+        <span style="font-size:12px">${p.sx==='G'?'♂':'♀'}</span>
+        <span style="color:var(--yellow);font-size:11px">${st(p.nv)}</span>
+      </div>`).join('')}`:'';
+    html+=`<div class="tc">
+      <div class="th" style="background:${col}">
+        <span>Équipe ${i+1}</span>
+        <span style="font-size:12px;opacity:.9">⭐${avg} · ${team.tit.length}j</span>
+      </div>
+      <div class="tbody">${tits}${rems}</div>
+    </div>`;
+  });
+  html+='</div>';
+  if(EQ[0]?.rem.length>0){
+    const rows=EQ[0].rem.map((r,i)=>`
+      <tr>
+        <td>🟢 Titulaire <strong>#${i+1}</strong> sort</td>
+        <td>🟡 Remplaçant <strong>#${r.num}</strong> entre</td>
+        <td>Niveau équivalent ✓</td>
+      </tr>`).join('');
+    html+=`<div class="card" style="margin-top:20px">
+      <div class="ct">🔄 Guide des remplacements</div>
+      <table class="stab">
+        <tr><th>Sort</th><th>Entre</th><th>Équilibre</th></tr>${rows}
+      </table></div>`;
+  }
+  G('eqcontent').innerHTML=html;
+}
+
+render();
+</script>
+</body>
+</html>
