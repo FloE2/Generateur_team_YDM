@@ -538,15 +538,13 @@ function startListening() {
 
     if (!currentClassId) {
       if (ids.length > 0) {
-        selectClass(ids[0]);
+        await selectClass(ids[0]);
       } else {
         showNoClass();
       }
     } else {
-      // Mettre à jour le titre si le nom de classe a changé
       const clsNom = classes[currentClassId]?.nom || '';
       G('add-card-title').innerHTML = `➕ Ajouter un élève <span style="font-weight:400;color:var(--primary);font-size:13px;margin-left:6px;">dans ${clsNom}</span>`;
-      // Juste re-render les élèves (mise à jour en direct)
       renderEleves();
       updateStats();
     }
@@ -565,7 +563,7 @@ function renderClassBar() {
   G('class-bar').innerHTML = html;
 }
 
-window.selectClass = id => {
+window.selectClass = async id => {
   if (!classes[id]) return;
   currentClassId = id;
   EQ = [];
@@ -574,12 +572,30 @@ window.selectClass = id => {
   G('no-class-view').style.display = 'none';
   G('panels').style.display = 'block';
   G('tabs').style.display   = 'flex';
-  // Affiche le nom de la classe dans le formulaire d'ajout
   const clsNom = classes[id]?.nom || '';
   G('add-card-title').innerHTML = `➕ Ajouter un élève <span style="font-weight:400;color:var(--primary);font-size:13px;margin-left:6px;">dans ${clsNom}</span>`;
   renderClassBar();
   showTab('eleves');
   renderEleves();
+
+  // Recharge les équipes sauvegardées
+  try {
+    const snap = await new Promise(res => {
+      const r = ref(db, `users/${uid}/classes/${id}/equipes`);
+      onValue(r, res, { onlyOnce: true });
+    });
+    const saved = snap.val();
+    if (saved?.data?.length) {
+      EQ = saved.data;
+      G('b-eq').textContent = EQ.length;
+      // Restaure les paramètres
+      if (saved.neq)     G('neq').value = saved.neq;
+      if (saved.njoueurs) G('njoueurs').value = saved.njoueurs;
+      if (saved.mix) document.querySelector(`input[name=mix][value="${saved.mix}"]`).checked = true;
+      if (saved.bal) document.querySelector(`input[name=eq][value="${saved.bal}"]`).checked = true;
+      renderEQ();
+    }
+  } catch(e) { /* pas d'équipes sauvegardées */ }
 };
 
 function showNoClass() {
@@ -795,7 +811,7 @@ function distrib(joueurs, n, bal) {
   return teams;
 }
 
-window.compose = () => {
+window.compose = async () => {
   const n   = parseInt(G('neq').value);
   const mix = document.querySelector('input[name=mix]:checked').value;
   const bal = document.querySelector('input[name=eq]:checked').value === 'oui';
@@ -848,6 +864,23 @@ window.compose = () => {
   }
 
   G('b-eq').textContent = EQ.length;
+
+  // Sauvegarde les équipes dans Firebase
+  const eqToSave = EQ.map(t => ({
+    id: t.id,
+    joueurs: t.joueurs.map(p => ({
+      id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num
+    }))
+  }));
+  await set(ref(db, `users/${uid}/classes/${currentClassId}/equipes`), {
+    data: eqToSave,
+    neq: parseInt(G('neq').value),
+    njoueurs: parseInt(G('njoueurs').value),
+    mix: document.querySelector('input[name=mix]:checked').value,
+    bal: document.querySelector('input[name=eq]:checked').value,
+    savedAt: Date.now()
+  });
+
   renderEQ();
   showTab('equipes');
 };
@@ -880,10 +913,10 @@ function renderEQ() {
     const extras     = team.joueurs.slice(njou);
 
     const rowJ = j => `
-      <div class="pr">
+      <div class="pr" style="background:${j.sx==='G'?'#e8f0fe':'#fce4ec'}">
         <div class="pnum">${j.num}</div>
         <div class="pname">${j.nom}</div>
-        <span style="font-size:13px;font-weight:700;color:${j.sx==='G'?'var(--boy)':'var(--girl)'}">${j.sx==='G'?'♂\uFE0E':'♀\uFE0E'}</span>
+        <span style="font-size:18px;font-weight:900;color:${j.sx==='G'?'var(--boy)':'var(--girl)'}">${j.sx==='G'?'♂\uFE0E':'♀\uFE0E'}</span>
       </div>`;
 
     const extrasHtml = extras.length
