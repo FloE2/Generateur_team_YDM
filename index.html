@@ -236,7 +236,12 @@ input[type=text]{min-width:160px}
       <!-- ÉLÈVES -->
       <div class="panel active" id="panel-eleves">
         <div class="card" id="add-card">
-          <div class="ct" id="add-card-title">➕ Ajouter un élève</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+            <div class="ct" id="add-card-title" style="margin:0">➕ Ajouter un élève</div>
+            <button class="btn btn-sm" style="background:#e8f0fe;color:var(--primary);border:1.5px solid #aecbfa" onclick="openImport()">
+              📥 Importer CSV / Excel
+            </button>
+          </div>
           <div class="row">
             <div class="fg">
               <label>Prénom / Nom</label>
@@ -372,6 +377,54 @@ input[type=text]{min-width:160px}
     <div style="display:flex;gap:10px;justify-content:flex-end">
       <button class="btn" style="background:var(--bg);color:var(--text)" onclick="closeClassModal()">Annuler</button>
       <button class="btn btn-b" onclick="saveClass()">➕ Créer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IMPORT CSV/EXCEL -->
+<div class="mo" id="modal-import" onclick="if(event.target===this)closeImport()">
+  <div class="moc" style="max-width:560px">
+    <h3>📥 Importer des élèves</h3>
+
+    <!-- Format attendu -->
+    <div class="al al-i" style="margin-bottom:16px;font-size:13px">
+      <div>
+        <strong>Format attendu (CSV ou Excel .xlsx) :</strong><br>
+        Une ligne par élève · 3 colonnes dans cet ordre :<br><br>
+        <code style="background:#fff;padding:4px 8px;border-radius:6px;font-size:12px;display:inline-block;margin-bottom:8px">
+          Prénom Nom &nbsp;|&nbsp; G ou F &nbsp;|&nbsp; Niveau (1 à 5)
+        </code><br>
+        <span style="font-size:12px">Exemple : <em>Marie Dupont, F, 2</em> &nbsp;·&nbsp; <em>Lucas Martin, G, 4</em></span><br><br>
+        ✅ La <strong>1ère ligne</strong> peut être un en-tête (elle sera ignorée automatiquement)<br>
+        ✅ Séparateurs acceptés : <strong>virgule</strong>, <strong>point-virgule</strong> ou <strong>tabulation</strong><br>
+        ✅ Sexe accepté : G, F, Garçon, Fille, M, H, Boy, Girl (insensible à la casse)
+      </div>
+    </div>
+
+    <!-- Zone de dépôt -->
+    <div id="drop-zone" style="border:2.5px dashed var(--border);border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px"
+      onclick="G('file-inp').click()"
+      ondragover="event.preventDefault();this.style.borderColor='var(--primary)';this.style.background='#e8f0fe'"
+      ondragleave="this.style.borderColor='var(--border)';this.style.background=''"
+      ondrop="handleDrop(event)">
+      <div style="font-size:36px;margin-bottom:8px">📂</div>
+      <div style="font-weight:600;color:var(--text);margin-bottom:4px">Glisser-déposer un fichier ici</div>
+      <div style="font-size:13px;color:var(--muted)">ou cliquer pour sélectionner · CSV ou XLSX</div>
+    </div>
+    <input type="file" id="file-inp" accept=".csv,.xlsx,.xls,.txt" style="display:none" onchange="handleFile(this.files[0])">
+
+    <!-- Aperçu -->
+    <div id="import-preview" style="display:none;margin-bottom:14px">
+      <div style="font-weight:700;font-size:13px;margin-bottom:8px" id="import-preview-title"></div>
+      <div style="max-height:200px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px">
+        <table style="width:100%;border-collapse:collapse;font-size:13px" id="import-table"></table>
+      </div>
+      <div id="import-errors" style="margin-top:8px;font-size:12px;color:var(--red)"></div>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn" style="background:var(--bg);color:var(--text)" onclick="closeImport()">Annuler</button>
+      <button class="btn btn-b" id="btn-import-confirm" style="display:none" onclick="confirmImport()">✅ Importer les élèves</button>
     </div>
   </div>
 </div>
@@ -763,6 +816,146 @@ function renderEQ() {
   }
   G('eqcontent').innerHTML = html;
 }
+
+// ── IMPORT CSV / EXCEL ───────────────────────────────
+let importRows = []; // lignes validées prêtes à importer
+
+window.openImport = () => {
+  importRows = [];
+  G('import-preview').style.display = 'none';
+  G('btn-import-confirm').style.display = 'none';
+  G('file-inp').value = '';
+  G('drop-zone').style.borderColor = 'var(--border)';
+  G('drop-zone').style.background = '';
+  G('modal-import').classList.add('open');
+};
+window.closeImport = () => G('modal-import').classList.remove('open');
+
+window.handleDrop = e => {
+  e.preventDefault();
+  G('drop-zone').style.borderColor = 'var(--border)';
+  G('drop-zone').style.background = '';
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+};
+
+window.handleFile = file => {
+  if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (['xlsx','xls'].includes(ext)) {
+    parseExcel(file);
+  } else {
+    parseCsv(file);
+  }
+};
+
+function parseCsv(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    processLines(lines.map(l => {
+      // Détecte le séparateur : ; ou , ou tabulation
+      const sep = l.includes(';') ? ';' : l.includes('\t') ? '\t' : ',';
+      return l.split(sep).map(c => c.trim().replace(/^["']|["']$/g, ''));
+    }));
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseExcel(file) {
+  // Charge SheetJS dynamiquement
+  const script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  script.onload = () => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      processLines(data.map(row => row.map(c => String(c).trim())));
+    };
+    reader.readAsArrayBuffer(file);
+  };
+  document.head.appendChild(script);
+}
+
+function normSexe(val) {
+  const v = val.trim().toLowerCase();
+  if (['g','m','h','garçon','garcon','boy','male','homme'].includes(v)) return 'G';
+  if (['f','fille','girl','female','femme'].includes(v)) return 'F';
+  return null;
+}
+
+function normNiveau(val) {
+  const n = parseInt(val);
+  if (n >= 1 && n <= 5) return n;
+  return null;
+}
+
+function processLines(rows) {
+  if (!rows.length) return;
+  const valid = [], errors = [];
+
+  // Ignore la première ligne si c'est un en-tête (pas de chiffre en col 3)
+  let start = 0;
+  const firstRow = rows[0];
+  if (firstRow.length >= 3 && normNiveau(firstRow[2]) === null) start = 1;
+
+  rows.slice(start).forEach((cols, i) => {
+    const lineNum = start + i + 1;
+    if (cols.length < 2 || !cols[0]) return; // ligne vide
+    const nom  = cols[0];
+    const sx   = normSexe(cols[1] || '');
+    const nv   = normNiveau(cols[2] || '3');
+
+    if (!sx) { errors.push(`Ligne ${lineNum} : sexe invalide ("${cols[1]}")`); return; }
+    if (!nv) { errors.push(`Ligne ${lineNum} : niveau invalide ("${cols[2]}")`); return; }
+    valid.push({ nom, sx, nv });
+  });
+
+  importRows = valid;
+
+  // Aperçu
+  G('import-preview').style.display = 'block';
+  G('import-preview-title').innerHTML =
+    `<span style="color:var(--green)">✅ ${valid.length} élève(s) prêt(s) à importer</span>` +
+    (errors.length ? ` · <span style="color:var(--red)">${errors.length} ligne(s) ignorée(s)</span>` : '');
+
+  const thead = `<tr style="position:sticky;top:0;background:var(--bg)">
+    <th style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--muted);text-align:left">NOM</th>
+    <th style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--muted);text-align:left">SEXE</th>
+    <th style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--muted);text-align:left">NIVEAU</th>
+  </tr>`;
+  const tbody = valid.map(e => `<tr style="border-bottom:1px solid var(--border)">
+    <td style="padding:7px 12px;font-size:13px">${e.nom}</td>
+    <td style="padding:7px 12px;font-size:13px">${e.sx === 'G' ? '♂ Garçon' : '♀ Fille'}</td>
+    <td style="padding:7px 12px;font-size:13px">${'★'.repeat(6-e.nv)}${'☆'.repeat(e.nv-1)} Niv.${e.nv}</td>
+  </tr>`).join('');
+  G('import-table').innerHTML = thead + tbody;
+
+  G('import-errors').innerHTML = errors.map(e => `⚠️ ${e}`).join('<br>');
+  G('btn-import-confirm').style.display = valid.length ? 'inline-flex' : 'none';
+}
+
+window.confirmImport = async () => {
+  if (!importRows.length || !currentClassId) return;
+  G('btn-import-confirm').textContent = '⏳ Import en cours…';
+  G('btn-import-confirm').disabled = true;
+
+  const updates = {};
+  importRows.forEach(e => {
+    const key = push(ref(db, `users/${uid}/classes/${currentClassId}/eleves`)).key;
+    updates[`users/${uid}/classes/${currentClassId}/eleves/${key}`] = {
+      nom: e.nom, sx: e.sx, nv: e.nv, abs: false
+    };
+  });
+  await update(ref(db), updates);
+
+  G('btn-import-confirm').textContent = '✅ Importer les élèves';
+  G('btn-import-confirm').disabled = false;
+  closeImport();
+};
 </script>
 </body>
 </html>
