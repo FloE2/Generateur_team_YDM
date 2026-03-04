@@ -903,6 +903,8 @@ function parseCsv(file) {
   // Essaie d'abord Latin-1 (encodage ProNote/Ecole Directe France)
   reader.readAsText(file, 'ISO-8859-1');
 }
+
+function processLines(rows) {
   if (!rows.length) return;
   const valid = [], errors = [];
 
