@@ -802,9 +802,8 @@ window.compose = () => {
   const pr  = curEleves().filter(e => !e.abs);
   if (pr.length < n) { alert(`Pas assez d'élèves présents (${pr.length}) pour ${n} équipes.`); return; }
 
-  if (mix === 'mixte') {
-    EQ = distrib(pr, n, bal);
-  } else {
+  if (mix === 'sep') {
+    // Mode séparé : garçons d'un côté, filles de l'autre
     const Gp = pr.filter(e => e.sx === 'G');
     const Fp = pr.filter(e => e.sx === 'F');
     const tG = distrib(Gp, n, bal);
@@ -817,7 +816,37 @@ window.compose = () => {
       if (bal) eq.joueurs.sort((a,b) => a.nv - b.nv);
       eq.joueurs.forEach((p,i) => p.num = i+1);
     });
+
+  } else {
+    // Mode MIXTE : distribution alternée G/F pour que le même numéro = même sexe
+    const Gp = pr.filter(e => e.sx === 'G');
+    const Fp = pr.filter(e => e.sx === 'F');
+
+    // Distributions séparées équilibrées par niveau
+    const boysTeams  = distrib(Gp, n, bal); // chaque équipe reçoit ses garçons triés
+    const girlsTeams = distrib(Fp, n, bal); // chaque équipe reçoit ses filles triées
+
+    // Pour chaque équipe, on entrelace G et F en alternant
+    // → numéro impair = garçon, pair = fille (ou inverse selon qui est + nombreux)
+    // On détermine l'ordre dominant (le sexe le plus nombreux commence)
+    const moreBoysGlobally = Gp.length >= Fp.length;
+
+    EQ = Array.from({length:n}, (_,i) => {
+      const boys  = boysTeams[i].joueurs;
+      const girls = girlsTeams[i].joueurs;
+      const first  = moreBoysGlobally ? boys  : girls;
+      const second = moreBoysGlobally ? girls : boys;
+      const merged = [];
+      const maxLen = Math.max(first.length, second.length);
+      for (let k = 0; k < maxLen; k++) {
+        if (k < first.length)  merged.push(first[k]);
+        if (k < second.length) merged.push(second[k]);
+      }
+      merged.forEach((p, idx) => p.num = idx + 1);
+      return { id: i, joueurs: merged };
+    });
   }
+
   G('b-eq').textContent = EQ.length;
   renderEQ();
   showTab('equipes');
@@ -854,7 +883,7 @@ function renderEQ() {
       <div class="pr">
         <div class="pnum">${j.num}</div>
         <div class="pname">${j.nom}</div>
-        <span style="font-size:12px;color:var(--muted)">${j.sx==='G'?'♂':'♀'}</span>
+        <span style="font-size:13px;font-weight:700;color:${j.sx==='G'?'var(--boy)':'var(--girl)'}">${j.sx==='G'?'♂\uFE0E':'♀\uFE0E'}</span>
       </div>`;
 
     const extrasHtml = extras.length
