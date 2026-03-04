@@ -857,20 +857,6 @@ window.handleFile = file => {
   }
 };
 
-function parseCsv(file) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    const text = e.target.result;
-    const lines = text.split(/\r?\n/).filter(l => l.trim());
-    processLines(lines.map(l => {
-      // Détecte le séparateur : ; ou , ou tabulation
-      const sep = l.includes(';') ? ';' : l.includes('\t') ? '\t' : ',';
-      return l.split(sep).map(c => c.trim().replace(/^["']|["']$/g, ''));
-    }));
-  };
-  reader.readAsText(file, 'UTF-8');
-}
-
 function parseExcel(file) {
   // Charge SheetJS dynamiquement
   const script = document.createElement('script');
@@ -889,14 +875,34 @@ function parseExcel(file) {
 }
 
 function normSexe(val) {
+  if (!val) return null;
+  // Nettoie les artefacts d'encodage (ex: "F\xe9minin" → on garde juste la 1ère lettre si besoin)
   const v = val.trim().toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // retire accents
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // retire accents propres
+    .replace(/[^\x00-\x7F]/g, '')                     // retire caractères non-ASCII (artefacts)
+    .trim();
+  if (!v) return null;
   if (['g','m','h','garcon','masculin','boy','male','homme'].includes(v)) return 'G';
   if (['f','fille','feminin','feminine','girl','female','femme'].includes(v)) return 'F';
+  // Fallback : première lettre seulement
+  if (v[0] === 'g' || v[0] === 'm' || v[0] === 'h') return 'G';
+  if (v[0] === 'f') return 'F';
   return null;
 }
 
-function processLines(rows) {
+function parseCsv(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    processLines(lines.map(l => {
+      const sep = l.includes(';') ? ';' : l.includes('\t') ? '\t' : ',';
+      return l.split(sep).map(c => c.trim().replace(/^["']|["']$/g, ''));
+    }));
+  };
+  // Essaie d'abord Latin-1 (encodage ProNote/Ecole Directe France)
+  reader.readAsText(file, 'ISO-8859-1');
+}
   if (!rows.length) return;
   const valid = [], errors = [];
 
