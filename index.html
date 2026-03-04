@@ -383,57 +383,64 @@ input[type=text]{min-width:160px}
 
 <!-- MODAL IMPORT CSV/EXCEL -->
 <div class="mo" id="modal-import" onclick="if(event.target===this)closeImport()">
-  <div class="moc" style="max-width:580px">
-    <h3>📥 Importer des élèves</h3>
-
-    <!-- Format attendu -->
-    <div class="al al-i" style="margin-bottom:16px;font-size:13px">
-      <div>
-        <strong>Format de votre export (3 colonnes, séparateur tabulation) :</strong><br><br>
-        <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px">
-          <tr style="background:#fff;border-radius:6px">
-            <th style="padding:5px 10px;text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">NOM</th>
-            <th style="padding:5px 10px;text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">Prénom</th>
-            <th style="padding:5px 10px;text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">Sexe</th>
-          </tr>
-          <tr>
-            <td style="padding:5px 10px">DUPONT</td><td style="padding:5px 10px">Marie</td><td style="padding:5px 10px">Féminin</td>
-          </tr>
-          <tr>
-            <td style="padding:5px 10px">MARTIN</td><td style="padding:5px 10px">Lucas</td><td style="padding:5px 10px">Masculin</td>
-          </tr>
-        </table>
-        ✅ En-tête ignorée automatiquement · Masculin/Féminin, G/F, M/H tous acceptés<br>
-        ✅ Le niveau sera à définir manuellement dans l'appli (il évolue selon l'activité)<br>
-        ✅ Le nom sera affiché : <strong>Prénom NOM</strong>
+  <div class="moc" style="max-width:580px;display:flex;flex-direction:column;max-height:90vh;padding:0;overflow:hidden">
+    
+    <!-- En-tête fixe -->
+    <div style="padding:24px 26px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
+      <h3 style="margin-bottom:14px">📥 Importer des élèves</h3>
+      <div class="al al-i" style="margin:0;font-size:13px">
+        <div>
+          <strong>Format de votre export (3 colonnes, séparateur tabulation) :</strong><br><br>
+          <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px">
+            <tr style="background:#fff;border-radius:6px">
+              <th style="padding:5px 10px;text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">NOM</th>
+              <th style="padding:5px 10px;text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">Prénom</th>
+              <th style="padding:5px 10px;text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">Sexe</th>
+            </tr>
+            <tr>
+              <td style="padding:5px 10px">DUPONT</td><td style="padding:5px 10px">Marie</td><td style="padding:5px 10px">Féminin</td>
+            </tr>
+            <tr>
+              <td style="padding:5px 10px">MARTIN</td><td style="padding:5px 10px">Lucas</td><td style="padding:5px 10px">Masculin</td>
+            </tr>
+          </table>
+          ✅ En-tête ignorée · Masculin/Féminin, G/F, M/H acceptés · Niveau à définir dans l'appli
+        </div>
       </div>
     </div>
 
-    <!-- Zone de dépôt -->
-    <div id="drop-zone" style="border:2.5px dashed var(--border);border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px"
-      onclick="G('file-inp').click()"
-      ondragover="event.preventDefault();this.style.borderColor='var(--primary)';this.style.background='#e8f0fe'"
-      ondragleave="this.style.borderColor='var(--border)';this.style.background=''"
-      ondrop="handleDrop(event)">
-      <div style="font-size:36px;margin-bottom:8px">📂</div>
-      <div style="font-weight:600;color:var(--text);margin-bottom:4px">Glisser-déposer un fichier ici</div>
-      <div style="font-size:13px;color:var(--muted)">ou cliquer pour sélectionner · CSV ou XLSX</div>
-    </div>
-    <input type="file" id="file-inp" accept=".csv,.xlsx,.xls,.txt" style="display:none" onchange="handleFile(this.files[0])">
+    <!-- Corps scrollable -->
+    <div style="overflow-y:auto;flex:1;padding:16px 26px">
 
-    <!-- Aperçu -->
-    <div id="import-preview" style="display:none;margin-bottom:14px">
-      <div style="font-weight:700;font-size:13px;margin-bottom:8px" id="import-preview-title"></div>
-      <div style="max-height:200px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px">
-        <table style="width:100%;border-collapse:collapse;font-size:13px" id="import-table"></table>
+      <!-- Zone de dépôt -->
+      <div id="drop-zone" style="border:2.5px dashed var(--border);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px"
+        onclick="G('file-inp').click()"
+        ondragover="event.preventDefault();this.style.borderColor='var(--primary)';this.style.background='#e8f0fe'"
+        ondragleave="this.style.borderColor='var(--border)';this.style.background=''"
+        ondrop="handleDrop(event)">
+        <div style="font-size:32px;margin-bottom:6px">📂</div>
+        <div style="font-weight:600;color:var(--text);margin-bottom:4px">Glisser-déposer un fichier ici</div>
+        <div style="font-size:13px;color:var(--muted)">ou cliquer pour sélectionner · CSV ou XLSX</div>
       </div>
-      <div id="import-errors" style="margin-top:8px;font-size:12px;color:var(--red)"></div>
+      <input type="file" id="file-inp" accept=".csv,.xlsx,.xls,.txt" style="display:none" onchange="handleFile(this.files[0])">
+
+      <!-- Aperçu -->
+      <div id="import-preview" style="display:none">
+        <div style="font-weight:700;font-size:13px;margin-bottom:8px" id="import-preview-title"></div>
+        <div style="max-height:240px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px">
+          <table style="width:100%;border-collapse:collapse;font-size:13px" id="import-table"></table>
+        </div>
+        <div id="import-errors" style="margin-top:8px;font-size:12px;color:var(--red)"></div>
+      </div>
+
     </div>
 
-    <div style="display:flex;gap:10px;justify-content:flex-end">
+    <!-- Pied fixe avec boutons -->
+    <div style="padding:14px 26px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;flex-shrink:0;background:#fff">
       <button class="btn" style="background:var(--bg);color:var(--text)" onclick="closeImport()">Annuler</button>
       <button class="btn btn-b" id="btn-import-confirm" style="display:none" onclick="confirmImport()">✅ Importer les élèves</button>
     </div>
+
   </div>
 </div>
 
