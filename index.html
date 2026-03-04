@@ -766,8 +766,27 @@ function distrib(joueurs, n, bal) {
   const teams = Array.from({length:n}, (_,i) => ({id:i, joueurs:[]}));
   if (!joueurs.length) return teams;
   let pool = [...joueurs];
-  if (bal) pool.sort((a,b) => a.nv - b.nv);
-  else     pool.sort(() => Math.random() - .5);
+
+  if (bal) {
+    // Groupe par niveau, mélange aléatoire au sein de chaque groupe
+    // → équipes équilibrées MAIS différentes à chaque recomposition
+    pool.sort((a,b) => a.nv - b.nv);
+    // Mélange les joueurs de même niveau entre eux
+    let i = 0;
+    while (i < pool.length) {
+      let j = i;
+      while (j < pool.length && pool[j].nv === pool[i].nv) j++;
+      // Fisher-Yates sur le groupe [i, j[
+      for (let k = j - 1; k > i; k--) {
+        const r = i + Math.floor(Math.random() * (k - i + 1));
+        [pool[k], pool[r]] = [pool[r], pool[k]];
+      }
+      i = j;
+    }
+  } else {
+    pool.sort(() => Math.random() - .5);
+  }
+
   snake(pool, teams, n);
   teams.forEach(t => {
     if (bal) t.joueurs.sort((a,b) => a.nv - b.nv);
