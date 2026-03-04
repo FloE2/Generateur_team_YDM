@@ -383,21 +383,29 @@ input[type=text]{min-width:160px}
 
 <!-- MODAL IMPORT CSV/EXCEL -->
 <div class="mo" id="modal-import" onclick="if(event.target===this)closeImport()">
-  <div class="moc" style="max-width:560px">
+  <div class="moc" style="max-width:580px">
     <h3>📥 Importer des élèves</h3>
 
     <!-- Format attendu -->
     <div class="al al-i" style="margin-bottom:16px;font-size:13px">
       <div>
-        <strong>Format attendu (CSV ou Excel .xlsx) :</strong><br>
-        Une ligne par élève · 3 colonnes dans cet ordre :<br><br>
-        <code style="background:#fff;padding:4px 8px;border-radius:6px;font-size:12px;display:inline-block;margin-bottom:8px">
-          Prénom Nom &nbsp;|&nbsp; G ou F &nbsp;|&nbsp; Niveau (1 à 5)
-        </code><br>
-        <span style="font-size:12px">Exemple : <em>Marie Dupont, F, 2</em> &nbsp;·&nbsp; <em>Lucas Martin, G, 4</em></span><br><br>
-        ✅ La <strong>1ère ligne</strong> peut être un en-tête (elle sera ignorée automatiquement)<br>
-        ✅ Séparateurs acceptés : <strong>virgule</strong>, <strong>point-virgule</strong> ou <strong>tabulation</strong><br>
-        ✅ Sexe accepté : G, F, Garçon, Fille, M, H, Boy, Girl (insensible à la casse)
+        <strong>Format de votre export (3 colonnes, séparateur tabulation) :</strong><br><br>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px">
+          <tr style="background:#fff;border-radius:6px">
+            <th style="padding:5px 10px;text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">NOM</th>
+            <th style="padding:5px 10px;text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">Prénom</th>
+            <th style="padding:5px 10px;text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">Sexe</th>
+          </tr>
+          <tr>
+            <td style="padding:5px 10px">DUPONT</td><td style="padding:5px 10px">Marie</td><td style="padding:5px 10px">Féminin</td>
+          </tr>
+          <tr>
+            <td style="padding:5px 10px">MARTIN</td><td style="padding:5px 10px">Lucas</td><td style="padding:5px 10px">Masculin</td>
+          </tr>
+        </table>
+        ✅ En-tête ignorée automatiquement · Masculin/Féminin, G/F, M/H tous acceptés<br>
+        ✅ Le niveau sera à définir manuellement dans l'appli (il évolue selon l'activité)<br>
+        ✅ Le nom sera affiché : <strong>Prénom NOM</strong>
       </div>
     </div>
 
@@ -881,15 +889,10 @@ function parseExcel(file) {
 }
 
 function normSexe(val) {
-  const v = val.trim().toLowerCase();
-  if (['g','m','h','garçon','garcon','boy','male','homme'].includes(v)) return 'G';
-  if (['f','fille','girl','female','femme'].includes(v)) return 'F';
-  return null;
-}
-
-function normNiveau(val) {
-  const n = parseInt(val);
-  if (n >= 1 && n <= 5) return n;
+  const v = val.trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // retire accents
+  if (['g','m','h','garcon','masculin','boy','male','homme'].includes(v)) return 'G';
+  if (['f','fille','feminin','feminine','girl','female','femme'].includes(v)) return 'F';
   return null;
 }
 
@@ -897,40 +900,56 @@ function processLines(rows) {
   if (!rows.length) return;
   const valid = [], errors = [];
 
-  // Ignore la première ligne si c'est un en-tête (pas de chiffre en col 3)
+  // Ignore la 1ère ligne si c'est un en-tête (colonne 3 pas un sexe connu)
   let start = 0;
   const firstRow = rows[0];
-  if (firstRow.length >= 3 && normNiveau(firstRow[2]) === null) start = 1;
+  if (firstRow.length >= 1 && normSexe(firstRow[2] || firstRow[1] || '') === null) start = 1;
 
   rows.slice(start).forEach((cols, i) => {
     const lineNum = start + i + 1;
-    if (cols.length < 2 || !cols[0]) return; // ligne vide
-    const nom  = cols[0];
-    const sx   = normSexe(cols[1] || '');
-    const nv   = normNiveau(cols[2] || '3');
+    // Filtre les lignes vides
+    if (!cols || cols.every(c => !c.trim())) return;
 
-    if (!sx) { errors.push(`Ligne ${lineNum} : sexe invalide ("${cols[1]}")`); return; }
-    if (!nv) { errors.push(`Ligne ${lineNum} : niveau invalide ("${cols[2]}")`); return; }
-    valid.push({ nom, sx, nv });
+    let nom, sx;
+
+    if (cols.length >= 3) {
+      // Format : NOM | Prénom | Sexe  (export pronote/ecole directe)
+      const nomFamille = (cols[0] || '').trim();
+      const prenom     = (cols[1] || '').trim();
+      nom = prenom && nomFamille ? `${prenom} ${nomFamille}` : (nomFamille || prenom);
+      sx  = normSexe(cols[2] || '');
+    } else if (cols.length === 2) {
+      // Format : Prénom Nom | Sexe
+      nom = (cols[0] || '').trim();
+      sx  = normSexe(cols[1] || '');
+    } else {
+      errors.push(`Ligne ${lineNum} : pas assez de colonnes`); return;
+    }
+
+    if (!nom) { errors.push(`Ligne ${lineNum} : nom vide`); return; }
+    if (!sx)  { errors.push(`Ligne ${lineNum} : sexe invalide ("${cols[cols.length-1]}")`); return; }
+
+    // Niveau par défaut 3 — sera défini manuellement dans l'appli
+    valid.push({ nom, sx, nv: 3 });
   });
 
   importRows = valid;
 
-  // Aperçu
   G('import-preview').style.display = 'block';
   G('import-preview-title').innerHTML =
     `<span style="color:var(--green)">✅ ${valid.length} élève(s) prêt(s) à importer</span>` +
-    (errors.length ? ` · <span style="color:var(--red)">${errors.length} ligne(s) ignorée(s)</span>` : '');
+    (errors.length ? ` · <span style="color:var(--red)">${errors.length} ligne(s) ignorée(s)</span>` : '') +
+    `<span style="color:var(--muted);font-weight:400;font-size:12px;margin-left:8px">— Niveau 3 par défaut, à ajuster dans l'appli</span>`;
 
   const thead = `<tr style="position:sticky;top:0;background:var(--bg)">
-    <th style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--muted);text-align:left">NOM</th>
+    <th style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--muted);text-align:left">#</th>
+    <th style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--muted);text-align:left">NOM COMPLET</th>
     <th style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--muted);text-align:left">SEXE</th>
-    <th style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--muted);text-align:left">NIVEAU</th>
   </tr>`;
-  const tbody = valid.map(e => `<tr style="border-bottom:1px solid var(--border)">
-    <td style="padding:7px 12px;font-size:13px">${e.nom}</td>
-    <td style="padding:7px 12px;font-size:13px">${e.sx === 'G' ? '♂ Garçon' : '♀ Fille'}</td>
-    <td style="padding:7px 12px;font-size:13px">${'★'.repeat(6-e.nv)}${'☆'.repeat(e.nv-1)} Niv.${e.nv}</td>
+  const tbody = valid.map((e, i) => `<tr style="border-bottom:1px solid var(--border)">
+    <td style="padding:7px 12px;font-size:12px;color:var(--muted)">${i+1}</td>
+    <td style="padding:7px 12px;font-size:13px;font-weight:600">${e.nom}</td>
+    <td style="padding:7px 12px;font-size:13px">${e.sx === 'G' ? '<span style="color:var(--boy)">♂ Garçon</span>' : '<span style="color:var(--girl)">♀ Fille</span>'}</td>
   </tr>`).join('');
   G('import-table').innerHTML = thead + tbody;
 
