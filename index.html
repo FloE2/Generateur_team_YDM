@@ -149,6 +149,13 @@ input[type=text]{min-width:160px}
 .stab th{text-align:left;padding:8px 12px;background:var(--bg);font-weight:700;font-size:11px;text-transform:uppercase;color:var(--muted)}
 .stab td{padding:8px 12px;border-bottom:1px solid var(--border)}
 
+/* INLINE STARS */
+.inline-stars { display:flex; align-items:center; gap:2px; margin-top:5px; }
+.istar { font-size:22px; cursor:pointer; line-height:1; transition:transform .1s, color .1s; user-select:none; }
+.istar.on  { color:var(--yellow); }
+.istar.off { color:#dadce0; }
+.istar:hover { transform:scale(1.25); }
+
 @media(max-width:600px){.content{padding:12px}input[type=text]{min-width:unset;width:100%}}
 @media print{
   .tabs,header,.class-bar,.btn,.sact,.sw,#add-card{display:none!important}
@@ -292,8 +299,8 @@ input[type=text]{min-width:160px}
             <div class="si"><label>Nombre d'équipes</label>
               <input type="number" id="neq" value="2" min="2" max="8" style="width:100%" oninput="preview()">
             </div>
-            <div class="si"><label>Remplaçants / équipe</label>
-              <input type="number" id="nrem" value="0" min="0" max="10" style="width:100%" oninput="preview()">
+            <div class="si"><label>Joueurs par équipe</label>
+              <input type="number" id="njoueurs" value="5" min="1" max="20" style="width:100%" oninput="preview()">
             </div>
             <div class="si"><label>Mixité</label>
               <div class="tog">
@@ -311,12 +318,13 @@ input[type=text]{min-width:160px}
         </div>
 
         <div class="card">
-          <div class="ct">📖 Logique de numérotation</div>
+          <div class="ct">📖 Logique de composition</div>
           <div class="al al-i">
-            <strong>Comment fonctionnent les numéros ?</strong><br><br>
-            Tirage en <em>serpentin</em> pour équilibrer les niveaux entre équipes, puis numérotation par niveau au sein de chaque équipe.<br><br>
-            ▶ Le <strong>joueur n°1</strong> de chaque équipe a un niveau équivalent dans toutes les équipes.<br>
-            ▶ Avec 5 titulaires, le remplaçant <strong>n°6</strong> remplace le titulaire <strong>n°1</strong> (même niveau → rapport de force maintenu).
+            <strong>Comment sont composées les équipes ?</strong><br><br>
+            Tous les élèves présents sont répartis équitablement dans les équipes.<br><br>
+            ▶ Tu définis le <strong>nombre d'équipes</strong> et les <strong>joueurs par équipe</strong>. Les élèves restants (si le compte n'est pas rond) sont répartis en extras numérotés.<br>
+            ▶ La distribution en <em>serpentin</em> garantit que le <strong>joueur n°1</strong> de chaque équipe a un niveau équivalent, le n°2 aussi, etc.<br>
+            ▶ Lors des changements : faire entrer/sortir les joueurs de <strong>même numéro</strong> pour maintenir l'équilibre.
           </div>
         </div>
 
@@ -642,9 +650,15 @@ window.renderEleves = () => {
           <div class="sname">${e.nom}</div>
           <div class="smeta">
             <span>${e.sx === 'G' ? 'Garçon' : 'Fille'}</span>
-            <span style="color:var(--yellow)">${st(e.nv)}</span>
-            <span>Niv.${e.nv}</span>
             ${e.abs ? '<span style="color:var(--red);font-weight:700;font-size:11px">ABSENT</span>' : ''}
+          </div>
+          <!-- Étoiles inline cliquables -->
+          <div class="inline-stars" title="Cliquer pour changer le niveau">
+            ${[1,2,3,4,5].map(n => `
+              <span class="istar ${n <= (6 - e.nv) ? 'on' : 'off'}"
+                onclick="setNiveau('${e.id}', ${6 - n})"
+                title="Niveau ${6 - n}">★</span>`).join('')}
+            <span style="font-size:11px;color:var(--muted);margin-left:4px">Niv.${e.nv}</span>
           </div>
         </div>
         <div class="sact">
@@ -672,6 +686,11 @@ function updateStats() {
 window.togAbs = async id => {
   const e = elevesOf(currentClassId)[id]; if (!e) return;
   await update(ref(db, `users/${uid}/classes/${currentClassId}/eleves/${id}`), { abs: !e.abs });
+};
+
+window.setNiveau = async (id, nv) => {
+  if (nv < 1 || nv > 5) return;
+  await update(ref(db, `users/${uid}/classes/${currentClassId}/eleves/${id}`), { nv });
 };
 window.delEleve = async id => {
   if (!confirm('Supprimer cet élève ?')) return;
@@ -709,63 +728,68 @@ window.saveEdit = async () => {
 
 // ── PREVIEW ──────────────────────────────────────────
 window.preview = () => {
-  const pr   = curEleves().filter(e => !e.abs);
-  const neq  = parseInt(G('neq').value) || 2;
-  const nrem = parseInt(G('nrem').value) || 0;
-  const tit  = Math.max(0, pr.length - neq * nrem);
-  G('prev').innerHTML = pr.length < neq
-    ? `<div class="al al-w">⚠️ Pas assez d'élèves présents (${pr.length}) pour ${neq} équipes.</div>`
-    : `<div class="al al-i">👁️ Aperçu : ${neq} équipes · <strong>~${Math.floor(tit/neq)} titulaire(s)</strong> + <strong>${nrem} remplaçant(s)</strong> · ${pr.length} présents</div>`;
+  const pr      = curEleves().filter(e => !e.abs);
+  const neq     = parseInt(G('neq').value) || 2;
+  const njou    = parseInt(G('njoueurs').value) || 5;
+  const total   = pr.length;
+  const terrain = neq * njou;
+  const extras  = Math.max(0, total - terrain);
+
+  G('prev').innerHTML = total < neq
+    ? `<div class="al al-w">⚠️ Pas assez d'élèves présents (${total}) pour ${neq} équipes.</div>`
+    : `<div class="al al-i">
+        👁️ <strong>${neq} équipes de ${njou} joueurs</strong> · ${total} présents
+        ${extras > 0
+          ? `· <strong>${extras} élève(s)</strong> réparti(s) en extra (numérotés en continuité)`
+          : '· Répartition parfaite ✓'}
+      </div>`;
 };
 
 // ── COMPOSITION ──────────────────────────────────────
-function snake(pool, teams, key, n) {
+function snake(pool, teams, n) {
   let dir = 1, idx = 0;
   pool.forEach(j => {
-    teams[idx][key].push({...j});
+    teams[idx].joueurs.push({...j});
     if (dir === 1) { if (idx < n-1) idx++; else dir = -1; }
     else           { if (idx > 0)   idx--; else dir = 1;  }
   });
 }
 
-function distrib(joueurs, n, nrem, bal) {
-  const teams = Array.from({length:n}, (_,i) => ({id:i, tit:[], rem:[]}));
+function distrib(joueurs, n, bal) {
+  const teams = Array.from({length:n}, (_,i) => ({id:i, joueurs:[]}));
   if (!joueurs.length) return teams;
   let pool = [...joueurs];
   if (bal) pool.sort((a,b) => a.nv - b.nv);
   else     pool.sort(() => Math.random() - .5);
-  const totalRem = Math.min(n * nrem, Math.max(0, pool.length - n));
-  snake(pool.slice(0, pool.length - totalRem), teams, 'tit', n);
-  snake(pool.slice(pool.length - totalRem),    teams, 'rem', n);
+  snake(pool, teams, n);
   teams.forEach(t => {
-    if (bal) { t.tit.sort((a,b) => a.nv-b.nv); t.rem.sort((a,b) => a.nv-b.nv); }
-    t.tit.forEach((p,i) => p.num = i+1);
-    t.rem.forEach((p,i) => p.num = t.tit.length + i+1);
+    if (bal) t.joueurs.sort((a,b) => a.nv - b.nv);
+    t.joueurs.forEach((p,i) => p.num = i+1);
   });
   return teams;
 }
 
 window.compose = () => {
-  const n    = parseInt(G('neq').value);
-  const nrem = parseInt(G('nrem').value);
-  const mix  = document.querySelector('input[name=mix]:checked').value;
-  const bal  = document.querySelector('input[name=eq]:checked').value === 'oui';
-  const pr   = curEleves().filter(e => !e.abs);
+  const n   = parseInt(G('neq').value);
+  const mix = document.querySelector('input[name=mix]:checked').value;
+  const bal = document.querySelector('input[name=eq]:checked').value === 'oui';
+  const pr  = curEleves().filter(e => !e.abs);
   if (pr.length < n) { alert(`Pas assez d'élèves présents (${pr.length}) pour ${n} équipes.`); return; }
 
   if (mix === 'mixte') {
-    EQ = distrib(pr, n, nrem, bal);
+    EQ = distrib(pr, n, bal);
   } else {
-    const Gp = pr.filter(e => e.sx === 'G'), Fp = pr.filter(e => e.sx === 'F');
-    const tG = distrib(Gp, n, 0, bal),       tF = distrib(Fp, n, 0, bal);
-    EQ = Array.from({length:n}, (_,i) => ({ id:i, tit:[...tG[i].tit,...tF[i].tit], rem:[] }));
-    const rG = distrib(Gp, n, nrem, bal).map(t => t.rem);
-    const rF = distrib(Fp, n, nrem, bal).map(t => t.rem);
-    EQ.forEach((eq,i) => { eq.rem = [...rG[i], ...rF[i]]; });
+    const Gp = pr.filter(e => e.sx === 'G');
+    const Fp = pr.filter(e => e.sx === 'F');
+    const tG = distrib(Gp, n, bal);
+    const tF = distrib(Fp, n, bal);
+    EQ = Array.from({length:n}, (_,i) => ({
+      id: i,
+      joueurs: [...tG[i].joueurs, ...tF[i].joueurs]
+    }));
     EQ.forEach(eq => {
-      if (bal) { eq.tit.sort((a,b) => a.nv-b.nv); eq.rem.sort((a,b) => a.nv-b.nv); }
-      eq.tit.forEach((p,i) => p.num = i+1);
-      eq.rem.forEach((p,i) => p.num = eq.tit.length + i+1);
+      if (bal) eq.joueurs.sort((a,b) => a.nv - b.nv);
+      eq.joueurs.forEach((p,i) => p.num = i+1);
     });
   }
   G('b-eq').textContent = EQ.length;
@@ -776,14 +800,14 @@ window.compose = () => {
 function renderEQ() {
   if (!EQ.length) return;
   const pr     = curEleves().filter(e => !e.abs).length;
-  const t0     = EQ[0]?.tit.length || 0;
-  const r0     = EQ[0]?.rem.length || 0;
+  const njou   = parseInt(G('njoueurs').value) || 5;
   const clsNom = classes[currentClassId]?.nom || '';
+  const maxJ   = Math.max(...EQ.map(t => t.joueurs.length));
 
   let html = `
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
       <div class="al al-i" style="flex:1;margin:0">
-        📚 <strong>${clsNom}</strong> · ✅ ${pr} présents · ${EQ.length} équipes · ~${t0} tit. + ${r0} rem.
+        📚 <strong>${clsNom}</strong> · ✅ ${pr} présents · ${EQ.length} équipes de ~${maxJ} joueurs
       </div>
       <button class="btn btn-sm" style="background:var(--yellow);color:#333" onclick="compose()">🔀 Recomposer</button>
       <button class="btn btn-sm btn-b" onclick="window.print()">🖨️ Imprimer</button>
@@ -792,43 +816,36 @@ function renderEQ() {
 
   EQ.forEach((team, i) => {
     const col = COL[i % COL.length];
-    const avg = team.tit.length ? (team.tit.reduce((s,p) => s+p.nv,0) / team.tit.length).toFixed(1) : '-';
-    const tits = team.tit.map(p => `
+    const avg = team.joueurs.length
+      ? (team.joueurs.reduce((s,p) => s+p.nv,0) / team.joueurs.length).toFixed(1)
+      : '-';
+
+    // Sépare joueurs "normaux" (dans le quota) et extras
+    const principaux = team.joueurs.slice(0, njou);
+    const extras     = team.joueurs.slice(njou);
+
+    const rowJ = j => `
       <div class="pr">
-        <div class="pnum">${p.num}</div><div class="pname">${p.nom}</div>
-        <span style="font-size:12px">${p.sx==='G'?'♂':'♀'}</span>
-        <span style="color:var(--yellow);font-size:11px">${st(p.nv)}</span>
-      </div>`).join('');
-    const rems = team.rem.length ? `<div class="sdiv">🔄 Remplaçants</div>${team.rem.map(p=>`
-      <div class="pr sub">
-        <div class="pnum">${p.num}</div><div class="pname">${p.nom}</div>
-        <span style="font-size:12px">${p.sx==='G'?'♂':'♀'}</span>
-        <span style="color:var(--yellow);font-size:11px">${st(p.nv)}</span>
-      </div>`).join('')}` : '';
+        <div class="pnum">${j.num}</div>
+        <div class="pname">${j.nom}</div>
+        <span style="font-size:12px">${j.sx==='G'?'♂':'♀'}</span>
+        <span style="color:var(--yellow);font-size:11px">${st(j.nv)}</span>
+      </div>`;
+
+    const extrasHtml = extras.length
+      ? `<div class="sdiv">➕ Extra</div>${extras.map(rowJ).join('')}`
+      : '';
+
     html += `<div class="tc">
       <div class="th" style="background:${col}">
         <span>Équipe ${i+1}</span>
-        <span style="font-size:12px;opacity:.9">⭐${avg} · ${team.tit.length}j</span>
+        <span style="font-size:12px;opacity:.9">⭐${avg} · ${team.joueurs.length}j</span>
       </div>
-      <div class="tbody">${tits}${rems}</div>
+      <div class="tbody">${principaux.map(rowJ).join('')}${extrasHtml}</div>
     </div>`;
   });
-  html += '</div>';
 
-  if (EQ[0]?.rem.length > 0) {
-    const rows = EQ[0].rem.map((r,i) => `
-      <tr>
-        <td>🟢 Titulaire <strong>#${i+1}</strong> sort</td>
-        <td>🟡 Remplaçant <strong>#${r.num}</strong> entre</td>
-        <td>Niveau équivalent dans toutes les équipes ✓</td>
-      </tr>`).join('');
-    html += `<div class="card" style="margin-top:20px">
-      <div class="ct">🔄 Guide des remplacements</div>
-      <table class="stab">
-        <tr><th>Titulaire sort</th><th>Remplaçant entre</th><th>Équilibre garanti</th></tr>
-        ${rows}
-      </table></div>`;
-  }
+  html += '</div>';
   G('eqcontent').innerHTML = html;
 }
 
