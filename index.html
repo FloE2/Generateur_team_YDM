@@ -640,10 +640,16 @@ window.renderEleves = () => {
   let L = curEleves().filter(e => e.nom.toLowerCase().includes(q) && (!fs || e.sx === fs));
   L.sort((a,b) => a.abs !== b.abs ? (a.abs ? 1 : -1) : a.nom.localeCompare(b.nom));
 
+  // Couleur selon niveau : nv1=vert, nv2=vert-jaune, nv3=jaune, nv4=orange, nv5=rouge
+  const nvColor = ['','#43a047','#8bc34a','#fbbc04','#ff7043','#ea4335'];
+
   const el = G('list');
   el.innerHTML = !L.length
     ? '<div class="empty" style="grid-column:1/-1"><div class="em">👀</div><p>Aucun élève trouvé.</p></div>'
-    : L.map(e => `
+    : L.map(e => {
+      const col = nvColor[e.nv];
+      const nbOn = 6 - e.nv; // nb étoiles allumées
+      return `
       <div class="sc ${e.abs ? 'absent' : ''}">
         <div class="gab ${e.sx}">${e.sx === 'G' ? '♂' : '♀'}</div>
         <div class="sinfo">
@@ -652,13 +658,13 @@ window.renderEleves = () => {
             <span>${e.sx === 'G' ? 'Garçon' : 'Fille'}</span>
             ${e.abs ? '<span style="color:var(--red);font-weight:700;font-size:11px">ABSENT</span>' : ''}
           </div>
-          <!-- Étoiles inline cliquables -->
           <div class="inline-stars" title="Cliquer pour changer le niveau">
             ${[1,2,3,4,5].map(n => `
-              <span class="istar ${n <= (6 - e.nv) ? 'on' : 'off'}"
+              <span class="istar ${n <= nbOn ? 'on' : 'off'}"
+                style="${n <= nbOn ? `color:${col}` : ''}"
                 onclick="setNiveau('${e.id}', ${6 - n})"
                 title="Niveau ${6 - n}">★</span>`).join('')}
-            <span style="font-size:11px;color:var(--muted);margin-left:4px">Niv.${e.nv}</span>
+            <span style="font-size:11px;color:${col};font-weight:700;margin-left:4px">Niv.${e.nv}</span>
           </div>
         </div>
         <div class="sact">
@@ -666,7 +672,8 @@ window.renderEleves = () => {
           <button class="ico-btn" onclick="openEdit('${e.id}')">✏️</button>
           <button class="ico-btn" onclick="delEleve('${e.id}')">🗑️</button>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
 
   updateStats();
 };
@@ -828,8 +835,7 @@ function renderEQ() {
       <div class="pr">
         <div class="pnum">${j.num}</div>
         <div class="pname">${j.nom}</div>
-        <span style="font-size:12px">${j.sx==='G'?'♂':'♀'}</span>
-        <span style="color:var(--yellow);font-size:11px">${st(j.nv)}</span>
+        <span style="font-size:12px;color:var(--muted)">${j.sx==='G'?'♂':'♀'}</span>
       </div>`;
 
     const extrasHtml = extras.length
