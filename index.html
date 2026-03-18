@@ -265,13 +265,13 @@ input[type=text]{min-width:160px}
               </div>
             </div>
             <div class="fg">
-              <label>Niveau (1 = meilleur)</label>
+              <label>Niveau (5 = meilleur)</label>
               <div class="lsel">
-                <input type="radio" name="nv" id="l5" value="5"><label for="l5" title="Débutant">★</label>
-                <input type="radio" name="nv" id="l4" value="4"><label for="l4">★</label>
-                <input type="radio" name="nv" id="l3" value="3" checked><label for="l3">★</label>
-                <input type="radio" name="nv" id="l2" value="2"><label for="l2">★</label>
-                <input type="radio" name="nv" id="l1" value="1"><label for="l1" title="Expert">★</label>
+                <input type="radio" name="nv" id="l5" value="5"><label for="l5" title="Expert / Très fort">★</label>
+                <input type="radio" name="nv" id="l4" value="4"><label for="l4" title="Fort">★</label>
+                <input type="radio" name="nv" id="l3" value="3" checked><label for="l3" title="Moyen">★</label>
+                <input type="radio" name="nv" id="l2" value="2"><label for="l2" title="Faible">★</label>
+                <input type="radio" name="nv" id="l1" value="1"><label for="l1" title="Débutant">★</label>
               </div>
             </div>
             <div class="fg"><label>&nbsp;</label>
@@ -361,13 +361,13 @@ input[type=text]{min-width:160px}
           <input type="radio" name="esx" id="esf" value="F"><label for="esf">♀ Fille</label>
         </div>
       </div>
-      <div class="fg"><label>Niveau (1 = meilleur)</label>
+      <div class="fg"><label>Niveau (5 = meilleur)</label>
         <div class="lsel">
-          <input type="radio" name="env" id="e5" value="5"><label for="e5">★</label>
-          <input type="radio" name="env" id="e4" value="4"><label for="e4">★</label>
-          <input type="radio" name="env" id="e3" value="3"><label for="e3">★</label>
-          <input type="radio" name="env" id="e2" value="2"><label for="e2">★</label>
-          <input type="radio" name="env" id="e1" value="1"><label for="e1">★</label>
+          <input type="radio" name="env" id="e5" value="5"><label for="e5" title="Expert / Très fort">★</label>
+          <input type="radio" name="env" id="e4" value="4"><label for="e4" title="Fort">★</label>
+          <input type="radio" name="env" id="e3" value="3"><label for="e3" title="Moyen">★</label>
+          <input type="radio" name="env" id="e2" value="2"><label for="e2" title="Faible">★</label>
+          <input type="radio" name="env" id="e1" value="1"><label for="e1" title="Débutant">★</label>
         </div>
       </div>
     </div>
@@ -663,15 +663,15 @@ window.renderEleves = () => {
   let L = curEleves().filter(e => e.nom.toLowerCase().includes(q) && (!fs || e.sx === fs));
   L.sort((a,b) => a.abs !== b.abs ? (a.abs ? 1 : -1) : a.nom.localeCompare(b.nom));
 
-  // Couleur selon niveau : nv1=vert, nv2=vert-jaune, nv3=jaune, nv4=orange, nv5=rouge
-  const nvColor = ['','#43a047','#8bc34a','#fbbc04','#ff7043','#ea4335'];
+  // Couleur selon niveau : nv5=vert(fort), nv3=jaune, nv1=rouge(faible)
+  const nvColor = ['','#ea4335','#ff7043','#fbbc04','#8bc34a','#43a047'];
 
   const el = G('list');
   el.innerHTML = !L.length
     ? '<div class="empty" style="grid-column:1/-1"><div class="em">👀</div><p>Aucun élève trouvé.</p></div>'
     : L.map(e => {
       const col = nvColor[e.nv];
-      const nbOn = 6 - e.nv; // nb étoiles allumées
+      const nbOn = e.nv; // nv5=5★ fort, nv1=1★ faible
       return `
       <div class="sc ${e.abs ? 'absent' : ''}">
         <div class="gab ${e.sx}">${e.sx === 'G' ? '♂' : '♀'}</div>
@@ -685,8 +685,8 @@ window.renderEleves = () => {
             ${[1,2,3,4,5].map(n => `
               <span class="istar ${n <= nbOn ? 'on' : 'off'}"
                 style="${n <= nbOn ? `color:${col}` : ''}"
-                onclick="setNiveau('${e.id}', ${6 - n})"
-                title="Niveau ${6 - n}">★</span>`).join('')}
+                onclick="setNiveau('${e.id}', ${n})"
+                title="Niveau ${n}">★</span>`).join('')}
             <span style="font-size:11px;color:${col};font-weight:700;margin-left:4px">Niv.${e.nv}</span>
           </div>
         </div>
@@ -774,7 +774,7 @@ window.preview = () => {
     pr.forEach(e => nvCount[e.nv] = (nvCount[e.nv]||0) + 1);
     const nvInfo = [1,2,3,4,5]
       .filter(n => nvCount[n] > 0)
-      .map(n => `Niv.${n}: <strong>${nvCount[n]}</strong>`)
+      .map(n => `${'★'.repeat(n)} Niv.${n}: <strong>${nvCount[n]}</strong>`)
       .join(' · ');
     modeMsg = `<br>★ Mode <strong>Similaires</strong> — ${nvInfo}`;
   }
@@ -803,15 +803,27 @@ function snake(pool, teams, n) {
 // ── MODE SIMILAIRE : regroupe les élèves de même niveau ──────────────
 function distribSimilaire(joueurs, n) {
   // Trie par niveau (nv=1 meilleur → nv=5 débutant)
-  const sorted = [...joueurs].sort((a, b) => a.nv - b.nv);
+  const sorted = [...joueurs].sort((a, b) => b.nv - a.nv); // nv5=meilleur en premier
   const teams = Array.from({length: n}, (_, i) => ({ id: i, joueurs: [] }));
 
-  // Répartition séquentielle : on découpe le tableau trié en N tranches
-  // Les élèves excédentaires (si non divisible) vont dans la tranche la plus proche
-  sorted.forEach((j, idx) => {
-    const teamIdx = Math.min(Math.floor(idx * n / sorted.length), n - 1);
-    teams[teamIdx].joueurs.push({...j});
-  });
+  // Répartition en N tranches de taille équitable
+  // En cas de reste (ex: 7 élèves pour 5 équipes → 2 extras),
+  // les extras vont dans les équipes de niveau supérieur (meilleures, index 0 en premier)
+  const total    = sorted.length;
+  const baseSize = Math.floor(total / n);
+  const extras   = total % n; // nombre d'équipes qui auront 1 élève de plus
+  // Les extras vont dans les premières équipes (niveau supérieur = meilleurs élèves)
+  const teamSizes = Array.from({length: n}, (_, i) => baseSize + (i < extras ? 1 : 0));
+
+  let idx = 0;
+  for (let t = 0; t < n; t++) {
+    for (let s = 0; s < teamSizes[t]; s++) {
+      if (idx < sorted.length) {
+        teams[t].joueurs.push({...sorted[idx]});
+        idx++;
+      }
+    }
+  }
 
   teams.forEach(t => t.joueurs.forEach((p, i) => p.num = i + 1));
   return teams;
@@ -823,9 +835,8 @@ function distrib(joueurs, n, bal) {
   let pool = [...joueurs];
 
   if (bal) {
-    // Groupe par niveau, mélange aléatoire au sein de chaque groupe
-    // → équipes équilibrées MAIS différentes à chaque recomposition
-    pool.sort((a,b) => a.nv - b.nv);
+    // Groupe par niveau décroissant (nv=5=meilleur en premier), mélange au sein de chaque groupe
+    pool.sort((a,b) => b.nv - a.nv);
     // Mélange les joueurs de même niveau entre eux
     let i = 0;
     while (i < pool.length) {
@@ -844,7 +855,7 @@ function distrib(joueurs, n, bal) {
 
   snake(pool, teams, n);
   teams.forEach(t => {
-    if (bal) t.joueurs.sort((a,b) => a.nv - b.nv);
+    if (bal) t.joueurs.sort((a,b) => b.nv - a.nv); // nv5=meilleur en premier
     t.joueurs.forEach((p,i) => p.num = i+1);
   });
   return teams;
@@ -895,7 +906,7 @@ window.compose = async () => {
       joueurs: [...tG[i].joueurs, ...tF[i].joueurs]
     }));
     EQ.forEach(eq => {
-      if (bal) eq.joueurs.sort((a,b) => a.nv - b.nv);
+      if (bal) eq.joueurs.sort((a,b) => b.nv - a.nv);
       eq.joueurs.forEach((p,i) => p.num = i+1);
     });
 
@@ -963,6 +974,7 @@ function renderEQ() {
         📚 <strong>${clsNom}</strong> · ✅ ${pr} présents · ${EQ.length} équipes de ~${maxJ} joueurs
       </div>
       <button class="btn btn-sm" style="background:var(--yellow);color:#333" onclick="compose()">🔀 Recomposer</button>
+      <button class="btn btn-sm" style="background:#1d6f42;color:#fff" onclick="exportExcel()">📊 Exporter Excel</button>
       <button class="btn btn-sm btn-b" onclick="window.print()">🖨️ Imprimer</button>
     </div>
     <div class="tgrid">`;
@@ -977,9 +989,8 @@ function renderEQ() {
       ? (() => {
           const nvs = team.joueurs.map(p => p.nv);
           const nvMin = Math.min(...nvs), nvMax = Math.max(...nvs);
-          const stars = '★'.repeat(6 - Math.round(parseFloat(avg)));
           return nvMin === nvMax
-            ? `Niv.${nvMin} ${'★'.repeat(6-nvMin)}`
+            ? `Niv.${nvMin} ${'★'.repeat(nvMin)}`
             : `Niv.${nvMin}-${nvMax}`;
         })()
       : null;
@@ -1170,6 +1181,106 @@ window.confirmImport = async () => {
   G('btn-import-confirm').disabled = false;
   closeImport();
 };
+// ── EXPORT EXCEL ─────────────────────────────────────────────────────
+window.exportExcel = () => {
+  if (!EQ.length) return;
+
+  // Charge SheetJS si pas encore disponible
+  const doExport = () => {
+    const njou    = parseInt(G('njoueurs').value) || 5;
+    const clsNom  = classes[currentClassId]?.nom || 'Equipes';
+    const eqVal   = document.querySelector('input[name=eq]:checked')?.value;
+    const modeLib = eqVal === 'similaire' ? 'Similaires' : eqVal === 'oui' ? 'Equilibrees' : 'Aleatoire';
+
+    // Construction du tableau : une colonne par équipe
+    const maxRows = Math.max(...EQ.map(t => t.joueurs.length));
+    const wb = XLSX.utils.book_new();
+    const wsData = [];
+
+    // Ligne 1 : en-têtes équipes
+    const headerRow = [];
+    EQ.forEach((team, i) => {
+      const avg = team.joueurs.length
+        ? (team.joueurs.reduce((s,p) => s+p.nv,0) / team.joueurs.length).toFixed(1)
+        : '-';
+      headerRow.push(`Equipe ${i+1} (moy. ${avg}★)`);
+      headerRow.push('Niv.'); // colonne niveau
+      headerRow.push('');     // colonne vide séparatrice
+    });
+    wsData.push(headerRow);
+
+    // Ligne 2 : sous-en-têtes
+    const subRow = [];
+    EQ.forEach(() => { subRow.push('Joueur'); subRow.push('★'); subRow.push(''); });
+    wsData.push(subRow);
+
+    // Lignes joueurs
+    for (let r = 0; r < maxRows; r++) {
+      const row = [];
+      EQ.forEach(team => {
+        const j = team.joueurs[r];
+        if (j) {
+          const stars = '★'.repeat(j.nv) + '☆'.repeat(5 - j.nv);
+          row.push(`${j.num}. ${j.nom}`);
+          row.push(stars);
+        } else {
+          row.push(''); row.push('');
+        }
+        // Séparateur extra
+        const extras = team.joueurs.slice(njou);
+        if (r === njou - 1 && extras.length > 0) {
+          row.push('--- Extra ---');
+        } else {
+          row.push('');
+        }
+      });
+      wsData.push(row);
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Largeurs de colonnes
+    const colWidths = [];
+    EQ.forEach(() => {
+      colWidths.push({ wch: 28 }); // nom joueur
+      colWidths.push({ wch: 8 });  // niveau étoiles
+      colWidths.push({ wch: 4 });  // séparateur
+    });
+    ws['!cols'] = colWidths;
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Equipes');
+
+    // Feuille récap par élève
+    const recapData = [['Nom', 'Sexe', 'Niveau', 'Equipe']];
+    EQ.forEach((team, i) => {
+      team.joueurs.forEach(j => {
+        recapData.push([
+          j.nom,
+          j.sx === 'G' ? 'Garçon' : 'Fille',
+          j.nv,
+          `Equipe ${i + 1}`
+        ]);
+      });
+    });
+    const wsRecap = XLSX.utils.aoa_to_sheet(recapData);
+    wsRecap['!cols'] = [{ wch: 30 }, { wch: 10 }, { wch: 8 }, { wch: 12 }];
+    XLSX.utils.book_append_sheet(wb, wsRecap, 'Liste élèves');
+
+    // Téléchargement
+    const date = new Date().toISOString().slice(0,10);
+    XLSX.writeFile(wb, `${clsNom}_${modeLib}_${date}.xlsx`);
+  };
+
+  if (typeof XLSX !== 'undefined') {
+    doExport();
+  } else {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    script.onload = doExport;
+    document.head.appendChild(script);
+  }
+};
+
 </script>
 <!-- FOOTER -->
 <footer style="text-align:center;padding:16px 24px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);background:#fff;margin-top:auto">
