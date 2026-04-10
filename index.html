@@ -325,6 +325,14 @@ input[type=text]{min-width:160px}
             </div>
           </div>
 
+          <!-- Sélecteur de sport -->
+          <div style="margin-top:18px;padding-top:16px;border-top:1.5px solid var(--border)">
+            <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">
+              🏅 Activité sportive — pour quel sport composez-vous ?
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:7px" id="sport-picker"></div>
+          </div>
+
           <!-- MODE MIXTE : bouton Composer -->
           <div id="compose-mixte-btn" style="margin-top:16px">
             <button class="btn btn-g" style="width:100%;justify-content:center;font-size:15px;padding:12px 16px" onclick="compose()">🎲 Composer les équipes</button>
@@ -381,6 +389,8 @@ input[type=text]{min-width:160px}
 
       <!-- ÉQUIPES -->
       <div class="panel" id="panel-equipes">
+        <!-- Barre des sports sauvegardés -->
+        <div id="sport-tabs-bar" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;display:none"></div>
         <div id="eqcontent">
           <div class="empty"><div class="em">⚽</div><p>Aucune équipe composée.<br>Allez dans <strong>Paramètres</strong> et cliquez sur "Composer les équipes".</p></div>
         </div>
@@ -527,7 +537,25 @@ let currentClassId = null;
 let editEleveId = null;
 let EQ = [];
 let selectedSepCombo = null;  // { nTeamsG, nTeamsF } en mode séparé
+let currentSport = null;      // clé du sport actif ex: 'FB'
+let savedSports  = {};        // { FB: {data,savedAt,...}, BB: {...}, ... }
 let dbListener = null;
+
+// ── SPORTS ───────────────────────────────────────────
+const SPORTS = [
+  { key:'FB',  label:'Football',      icon:'⚽' },
+  { key:'BB',  label:'Basketball',    icon:'🏀' },
+  { key:'HB',  label:'Handball',      icon:'🤾' },
+  { key:'VB',  label:'Volley',        icon:'🏐' },
+  { key:'RG',  label:'Rugby',         icon:'🏉' },
+  { key:'BD',  label:'Badminton',     icon:'🏸' },
+  { key:'TT',  label:'Tennis table',  icon:'🏓' },
+  { key:'AT',  label:'Athlétisme',    icon:'🏃' },
+  { key:'NT',  label:'Natation',      icon:'🏊' },
+  { key:'SK',  label:'Ski',           icon:'⛷️' },
+  { key:'GY',  label:'Gym',           icon:'🤸' },
+  { key:'AU',  label:'Autre',         icon:'🎯' },
+];
 
 // ── UTILS ────────────────────────────────────────────
 const G  = id => document.getElementById(id);
@@ -613,6 +641,8 @@ window.selectClass = async id => {
   if (!classes[id]) return;
   currentClassId = id;
   EQ = [];
+  savedSports  = {};
+  currentSport = null;
   selectedSepCombo = null;
   G('b-eq').textContent = '0';
   G('eqcontent').innerHTML = '<div class="empty"><div class="em">⚽</div><p>Aucune équipe composée.<br>Allez dans <strong>Paramètres</strong>.</p></div>';
@@ -625,17 +655,20 @@ window.selectClass = async id => {
   showTab('eleves');
   renderEleves();
 
-  // Recharge les équipes sauvegardées
+  // Recharge toutes les équipes par sport
   try {
     const snap = await new Promise(res => {
-      const r = ref(db, `users/${uid}/classes/${id}/equipes`);
+      const r = ref(db, `users/${uid}/classes/${id}/equipes_sport`);
       onValue(r, res, { onlyOnce: true });
     });
-    const saved = snap.val();
-    if (saved?.data?.length) {
-      EQ = saved.data;
-      G('b-eq').textContent = EQ.length;
-      // Restaure les paramètres
+    const all = snap.val() || {};
+    savedSports = all;
+    const sportKeys = Object.keys(all).filter(k => all[k]?.data?.length);
+    if (sportKeys.length) {
+      currentSport = sportKeys[0];
+      EQ = all[currentSport].data;
+      // Restaure les paramètres du dernier sport chargé
+      const saved = all[currentSport];
       if (saved.neq)     G('neq').value = saved.neq;
       if (saved.njoueurs) G('njoueurs').value = saved.njoueurs;
       if (saved.mix) document.querySelector(`input[name=mix][value="${saved.mix}"]`).checked = true;
@@ -643,9 +676,14 @@ window.selectClass = async id => {
         const balInput = document.querySelector(`input[name=eq][value="${saved.bal}"]`);
         if (balInput) balInput.checked = true;
       }
+      updateEqBadge();
+      renderSportPicker();
+      renderSportTabs();
       renderEQ();
+    } else {
+      renderSportPicker();
     }
-  } catch(e) { /* pas d'équipes sauvegardées */ }
+  } catch(e) { renderSportPicker(); }
 };
 
 function showNoClass() {
@@ -809,6 +847,89 @@ window.saveEdit = async () => {
   await update(ref(db, `users/${uid}/classes/${currentClassId}/eleves/${editEleveId}`), { nom, sx, nv });
   closeM();
 };
+
+// ── SPORTS ────────────────────────────────────────────
+function renderSportPicker() {
+  G('sport-picker').innerHTML = SPORTS.map(s => {
+    const isSel = currentSport === s.key;
+    const hasSaved = !!savedSports[s.key];
+    return `<button onclick="selectSport('${s.key}')"
+      style="padding:8px 13px;border:2.5px solid ${isSel ? 'var(--primary)' : (hasSaved ? '#43a047' : 'var(--border)')};
+             border-radius:20px;background:${isSel ? 'var(--primary)' : (hasSaved ? '#e8f5e9' : '#fff')};
+             color:${isSel ? '#fff' : (hasSaved ? '#2e7d32' : 'var(--text)')};
+             cursor:pointer;font-size:13px;font-weight:700;transition:all .15s;
+             display:inline-flex;align-items:center;gap:5px">
+      ${s.icon} ${s.key}${hasSaved ? ' ✓' : ''}
+    </button>`;
+  }).join('');
+}
+
+window.selectSport = key => {
+  currentSport = key;
+  renderSportPicker();
+  // Si ce sport a déjà des équipes, les charger en mémoire
+  if (savedSports[key]?.data?.length) {
+    EQ = savedSports[key].data;
+  }
+};
+
+function renderSportTabs() {
+  const bar = G('sport-tabs-bar');
+  const sportKeys = Object.keys(savedSports).filter(k => savedSports[k]?.data?.length);
+  if (!sportKeys.length) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+
+  bar.innerHTML = sportKeys.map(key => {
+    const s = SPORTS.find(x => x.key === key) || { icon:'🎯', label: key };
+    const isSel = currentSport === key;
+    return `<div style="display:inline-flex;align-items:center;border:2.5px solid ${isSel ? 'var(--primary)' : 'var(--border)'};
+              border-radius:20px;background:${isSel ? 'var(--primary)' : '#fff'};overflow:hidden;transition:all .15s">
+      <button onclick="switchSportTab('${key}')"
+        style="padding:7px 12px;border:none;background:none;
+               color:${isSel ? '#fff' : 'var(--text)'};
+               cursor:pointer;font-size:13px;font-weight:700;display:flex;align-items:center;gap:5px">
+        ${s.icon} ${s.label} (${savedSports[key].data.length} éq.)
+      </button>
+      <button onclick="deleteSportTeams('${key}')"
+        title="Supprimer les équipes ${s.label}"
+        style="padding:6px 10px;border:none;border-left:1.5px solid ${isSel ? 'rgba(255,255,255,.3)' : 'var(--border)'};
+               background:none;color:${isSel ? 'rgba(255,255,255,.85)' : 'var(--red)'};
+               cursor:pointer;font-size:13px;font-weight:700;transition:all .15s">
+        ×
+      </button>
+    </div>`;
+  }).join('');
+}
+
+window.switchSportTab = key => {
+  currentSport = key;
+  if (savedSports[key]?.data?.length) EQ = savedSports[key].data;
+  renderSportTabs();
+  renderEQ();
+  renderSportPicker();
+};
+
+window.deleteSportTeams = async key => {
+  const s = SPORTS.find(x => x.key === key) || { label: key };
+  if (!confirm(`Supprimer les équipes "${s.icon || ''} ${s.label}" ?`)) return;
+  await remove(ref(db, `users/${uid}/classes/${currentClassId}/equipes_sport/${key}`));
+  delete savedSports[key];
+  if (currentSport === key) {
+    const remaining = Object.keys(savedSports).filter(k => savedSports[k]?.data?.length);
+    currentSport = remaining[0] || null;
+    EQ = currentSport ? (savedSports[currentSport]?.data || []) : [];
+  }
+  updateEqBadge();
+  renderSportTabs();
+  renderSportPicker();
+  if (EQ.length) renderEQ();
+  else G('eqcontent').innerHTML = '<div class="empty"><div class="em">⚽</div><p>Aucune équipe composée.<br>Allez dans <strong>Paramètres</strong> et cliquez sur "Composer les équipes".</p></div>';
+};
+
+function updateEqBadge() {
+  const total = Object.values(savedSports).reduce((s, v) => s + (v?.data?.length || 0), 0);
+  G('b-eq').textContent = total;
+}
 
 // ── MIXITÉ SWITCH ─────────────────────────────────────
 window.onMixChange = () => {
@@ -1123,16 +1244,19 @@ window.compose = async () => {
     });
   }
 
+  if (!currentSport) { alert('Veuillez d\'abord choisir un sport dans le sélecteur "Activité sportive".'); return; }
+
   G('b-eq').textContent = EQ.length;
 
-  // Sauvegarde les équipes dans Firebase
+  // Sauvegarde les équipes dans Firebase par sport
   const eqToSave = EQ.map(t => ({
-    id: t.id,
+    id: t.id, genre: t.genre || null,
     joueurs: t.joueurs.map(p => ({
       id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num
     }))
   }));
-  await set(ref(db, `users/${uid}/classes/${currentClassId}/equipes`), {
+  const sportData = {
+    sport: currentSport,
     data: eqToSave,
     neq: parseInt(G('neq').value),
     njoueurs: parseInt(G('njoueurs').value),
@@ -1140,8 +1264,12 @@ window.compose = async () => {
     bal: eqVal,
     simil: simil,
     savedAt: Date.now()
-  });
+  };
+  await set(ref(db, `users/${uid}/classes/${currentClassId}/equipes_sport/${currentSport}`), sportData);
+  savedSports[currentSport] = sportData;
 
+  updateEqBadge();
+  renderSportPicker();
   renderEQ();
   showTab('equipes');
 };
@@ -1150,13 +1278,18 @@ function renderEQ() {
   if (!EQ.length) return;
   const pr     = curEleves().filter(e => !e.abs).length;
   const clsNom = classes[currentClassId]?.nom || '';
-  const isSep  = EQ.some(t => t.genre);   // mode séparé si les équipes ont un champ genre
-  const isSimil = document.querySelector('input[name=eq]:checked')?.value === 'similaire';
+  const isSep  = EQ.some(t => t.genre);
+  const isSimil = savedSports[currentSport]?.simil ||
+    document.querySelector('input[name=eq]:checked')?.value === 'similaire';
+  const sportObj = SPORTS.find(s => s.key === currentSport);
+  const sportLabel = sportObj ? `${sportObj.icon} ${sportObj.label}` : (currentSport || '');
+
+  renderSportTabs();
 
   let html = `
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
       <div class="al al-i" style="flex:1;margin:0">
-        📚 <strong>${clsNom}</strong> · ✅ ${pr} présents · ${EQ.length} équipes
+        📚 <strong>${clsNom}</strong> · ${sportLabel ? `<strong>${sportLabel}</strong> · ` : ''}✅ ${pr} présents · ${EQ.length} équipes
         ${isSep ? '· ♂ + ♀ séparés' : ''}
       </div>
       <button class="btn btn-sm" style="background:var(--yellow);color:#333" onclick="compose()">🔀 Recomposer</button>
