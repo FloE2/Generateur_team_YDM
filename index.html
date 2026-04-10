@@ -298,19 +298,17 @@ input[type=text]{min-width:160px}
       <div class="panel" id="panel-params">
         <div class="card">
           <div class="ct">⚙️ Configuration des équipes</div>
-          <div class="set-grid">
-            <div class="si" id="si-neq"><label>Nombre d'équipes</label>
-              <input type="number" id="neq" value="2" min="2" max="8" style="width:100%" oninput="preview()">
-            </div>
-            <div class="si" id="si-njoueurs"><label>Joueurs par équipe</label>
-              <input type="number" id="njoueurs" value="5" min="1" max="20" style="width:100%" oninput="preview()">
-            </div>
+
+          <!-- Ligne principale de contrôles -->
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+            <!-- Mixité -->
             <div class="si"><label>Mixité</label>
               <div class="tog">
-                <input type="radio" name="mix" id="mm" value="mixte" checked onchange="onMixChange()"><label for="mm" title="Garçons et filles dans les mêmes équipes">Mixte</label>
-                <input type="radio" name="mix" id="ms" value="sep" onchange="onMixChange()"><label for="ms" title="Équipes 100% garçons + équipes 100% filles">Séparé</label>
+                <input type="radio" name="mix" id="mm" value="mixte" checked onchange="onMixChange()"><label for="mm">Mixte</label>
+                <input type="radio" name="mix" id="ms" value="sep" onchange="onMixChange()"><label for="ms">Séparé</label>
               </div>
             </div>
+            <!-- Répartition -->
             <div class="si" style="min-width:280px"><label>Répartition</label>
               <div class="tog">
                 <input type="radio" name="eq" id="en" value="oui" checked onchange="preview()"><label for="en" title="Chaque équipe a un mélange de tous les niveaux">⚖️ Équilibrées</label>
@@ -318,17 +316,52 @@ input[type=text]{min-width:160px}
                 <input type="radio" name="eq" id="ea" value="non" onchange="preview()"><label for="ea" title="Répartition aléatoire">🎲 Aléatoire</label>
               </div>
             </div>
-            <div class="si"><label>&nbsp;</label>
-              <button class="btn btn-g" style="width:100%;justify-content:center;font-size:15px;padding:10px 16px" onclick="compose()">🎲 Composer</button>
+            <!-- Champs mixte uniquement -->
+            <div id="si-neq" class="si"><label>Nombre d'équipes</label>
+              <input type="number" id="neq" value="2" min="2" max="8" style="width:110px" oninput="preview()">
+            </div>
+            <div id="si-njoueurs" class="si"><label>Joueurs par équipe</label>
+              <input type="number" id="njoueurs" value="5" min="1" max="20" style="width:110px" oninput="preview()">
             </div>
           </div>
 
-          <!-- Panneau configurations séparées -->
-          <div id="sep-combos-panel" style="display:none;margin-top:18px;padding-top:16px;border-top:1.5px solid var(--border)">
-            <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">
-              ♂♀ Configurations possibles (3 à 7 joueurs/équipe) — cliquez pour choisir
+          <!-- MODE MIXTE : bouton Composer -->
+          <div id="compose-mixte-btn" style="margin-top:16px">
+            <button class="btn btn-g" style="width:100%;justify-content:center;font-size:15px;padding:12px 16px" onclick="compose()">🎲 Composer les équipes</button>
+          </div>
+
+          <!-- MODE SÉPARÉ : deux colonnes indépendantes -->
+          <div id="sep-panel" style="display:none;margin-top:18px;padding-top:18px;border-top:1.5px solid var(--border)">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+              <!-- COLONNE GARÇONS -->
+              <div>
+                <div style="font-weight:800;font-size:14px;color:var(--boy);margin-bottom:10px;display:flex;align-items:center;gap:7px">
+                  ♂ Équipes Garçons
+                  <span id="sel-boys-badge" style="display:none;background:var(--boy);color:#fff;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700"></span>
+                </div>
+                <div id="boys-options" style="display:flex;flex-direction:column;gap:6px"></div>
+              </div>
+
+              <!-- COLONNE FILLES -->
+              <div>
+                <div style="font-weight:800;font-size:14px;color:var(--girl);margin-bottom:10px;display:flex;align-items:center;gap:7px">
+                  ♀ Équipes Filles
+                  <span id="sel-girls-badge" style="display:none;background:var(--girl);color:#fff;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700"></span>
+                </div>
+                <div id="girls-options" style="display:flex;flex-direction:column;gap:6px"></div>
+              </div>
+
             </div>
-            <div id="sep-combos-list" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+
+            <!-- Aperçu + Composer en bas -->
+            <div id="sep-compose-wrap" style="display:none;margin-top:18px;padding-top:14px;border-top:1.5px solid var(--border)">
+              <div id="prev-sep" style="margin-bottom:12px"></div>
+              <button class="btn btn-g" style="width:100%;justify-content:center;font-size:15px;padding:12px 16px" onclick="compose()">🎲 Composer les équipes</button>
+            </div>
+            <div id="sep-hint" style="margin-top:14px;font-size:13px;color:var(--muted);text-align:center">
+              👆 Choisissez un nombre d'équipes pour les garçons <em>et</em> pour les filles
+            </div>
           </div>
         </div>
 
@@ -339,7 +372,7 @@ input[type=text]{min-width:160px}
             ⚖️ <strong>Équilibrées</strong> — Distribution en serpentin : chaque équipe a un mélange de tous les niveaux. Idéal pour des matchs équilibrés.<br><br>
             ★ <strong>Similaires</strong> — Les élèves du même niveau sont regroupés ensemble (les meilleurs avec les meilleurs, les débutants avec les débutants). Idéal pour un travail différencié.<br><br>
             🎲 <strong>Aléatoire</strong> — Répartition aléatoire sans critère de niveau.<br><br>
-            ▶ En mode <strong>Séparé</strong>, l'appli calcule automatiquement toutes les configurations valides et vous laisse choisir. Tous les élèves présents sont toujours répartis (tailles ±1 joueur).
+            ▶ En mode <strong>Séparé</strong>, choisissez indépendamment le nombre d'équipes garçons et filles. Les tailles s'ajustent automatiquement (±1 joueur).
           </div>
         </div>
 
@@ -726,8 +759,11 @@ function updateStats() {
   const isSep = document.querySelector('input[name=mix]:checked')?.value === 'sep';
   if (isSep) {
     selectedSepCombo = null;
+    G('sel-boys-badge').style.display  = 'none';
+    G('sel-girls-badge').style.display = 'none';
+    G('sep-compose-wrap').style.display = 'none';
+    G('sep-hint').style.display         = 'block';
     renderSepCombos();
-    preview();
   }
 }
 
@@ -777,12 +813,14 @@ window.saveEdit = async () => {
 // ── MIXITÉ SWITCH ─────────────────────────────────────
 window.onMixChange = () => {
   const isSep = document.querySelector('input[name=mix]:checked')?.value === 'sep';
-  G('si-neq').style.display      = isSep ? 'none' : '';
-  G('si-njoueurs').style.display = isSep ? 'none' : '';
-  G('sep-combos-panel').style.display = isSep ? 'block' : 'none';
+  G('si-neq').style.display          = isSep ? 'none' : '';
+  G('si-njoueurs').style.display     = isSep ? 'none' : '';
+  G('compose-mixte-btn').style.display = isSep ? 'none' : '';
+  G('sep-panel').style.display       = isSep ? 'block' : 'none';
+  G('prev').innerHTML                = '';
   selectedSepCombo = null;
   if (isSep) renderSepCombos();
-  preview();
+  else preview();
 };
 
 // Calcule toutes les configs valides (équipes de 3 à 7) pour N joueurs
@@ -794,14 +832,29 @@ function validConfigs(N) {
     const rem  = N % nt;
     const maxSz = rem > 0 ? base + 1 : base;
     if (base >= 3 && maxSz <= 7) {
-      let sizeDesc;
-      if (rem === 0)       sizeDesc = `${base} joueurs`;
-      else if (rem === nt) sizeDesc = `${base+1} joueurs`;
-      else                 sizeDesc = `${base}-${base+1} joueurs`;
-      configs.push({ nTeams: nt, base, rem, sizeDesc });
+      let sizeLabel;
+      if (rem === 0)      sizeLabel = `${nt} équipe${nt>1?'s':''} de ${base}`;
+      else                sizeLabel = `${nt} équipe${nt>1?'s':''} de ${base}-${base+1}`;
+      configs.push({ nTeams: nt, base, rem, sizeLabel });
     }
   }
   return configs;
+}
+
+function makeOptionBtn(cfg, gender, selected) {
+  const color = gender === 'G' ? 'var(--boy)' : 'var(--girl)';
+  const bgSel = gender === 'G' ? '#e8f0fe' : '#fce4ec';
+  const isSel = selected === cfg.nTeams;
+  return `<button
+    onclick="selectSex('${gender}', ${cfg.nTeams})"
+    data-gender="${gender}" data-n="${cfg.nTeams}"
+    style="padding:10px 16px;border:2.5px solid ${isSel ? color : 'var(--border)'};
+           border-radius:10px;background:${isSel ? bgSel : '#fff'};
+           cursor:pointer;font-size:13px;font-weight:${isSel?'700':'600'};
+           color:${isSel ? color : 'var(--text)'};text-align:left;
+           transition:all .15s;width:100%">
+    ${cfg.sizeLabel}
+  </button>`;
 }
 
 function renderSepCombos() {
@@ -810,52 +863,75 @@ function renderSepCombos() {
   const nG = pr.filter(e => e.sx === 'G').length;
   const nF = pr.filter(e => e.sx === 'F').length;
 
-  const boysC = validConfigs(nG);
+  const boysC  = validConfigs(nG);
   const girlsC = validConfigs(nF);
 
-  if (!boysC.length && !girlsC.length) {
-    G('sep-combos-list').innerHTML = `<div class="al al-w" style="width:100%">⚠️ Pas assez d'élèves présents pour former des équipes de 3 à 7 joueurs.</div>`;
-    return;
-  }
-  if (!boysC.length) {
-    G('sep-combos-list').innerHTML = `<div class="al al-w" style="width:100%">⚠️ Pas assez de garçons présents (${nG}) pour des équipes de 3 à 7.</div>`;
-    return;
-  }
-  if (!girlsC.length) {
-    G('sep-combos-list').innerHTML = `<div class="al al-w" style="width:100%">⚠️ Pas assez de filles présentes (${nF}) pour des équipes de 3 à 7.</div>`;
-    return;
-  }
+  const selG = selectedSepCombo?.nTeamsG ?? null;
+  const selF = selectedSepCombo?.nTeamsF ?? null;
 
-  let html = '';
-  for (const bg of boysC) {
-    for (const fg of girlsC) {
-      const key = `${bg.nTeams}_${fg.nTeams}`;
-      const isSel = selectedSepCombo && selectedSepCombo.nTeamsG === bg.nTeams && selectedSepCombo.nTeamsF === fg.nTeams;
-      html += `<button class="sep-combo-btn" data-key="${key}"
-        onclick="selectSepCombo(${bg.nTeams},${fg.nTeams})"
-        style="padding:10px 14px;border:2px solid ${isSel ? 'var(--primary)' : 'var(--border)'};border-radius:10px;
-               background:${isSel ? '#e8f0fe' : '#fff'};cursor:pointer;font-size:13px;text-align:left;
-               transition:all .2s;min-width:190px;line-height:1.6">
-        <div style="font-weight:700;color:var(--boy)">♂ ${bg.nTeams} équipe${bg.nTeams>1?'s':''} · ${bg.sizeDesc}</div>
-        <div style="font-weight:700;color:var(--girl)">♀ ${fg.nTeams} équipe${fg.nTeams>1?'s':''} · ${fg.sizeDesc}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:3px">${bg.nTeams + fg.nTeams} équipes au total</div>
-      </button>`;
-    }
-  }
-  G('sep-combos-list').innerHTML = html;
+  // Colonne garçons
+  G('boys-options').innerHTML = boysC.length
+    ? boysC.map(c => makeOptionBtn(c, 'G', selG)).join('')
+    : `<div class="al al-w" style="font-size:13px">⚠️ Pas assez de garçons (${nG}) pour des équipes de 3 à 7.</div>`;
+
+  // Colonne filles
+  G('girls-options').innerHTML = girlsC.length
+    ? girlsC.map(c => makeOptionBtn(c, 'F', selF)).join('')
+    : `<div class="al al-w" style="font-size:13px">⚠️ Pas assez de filles (${nF}) pour des équipes de 3 à 7.</div>`;
+
+  updateSepComposeArea(nG, nF);
 }
 
-window.selectSepCombo = (nG, nF) => {
-  selectedSepCombo = { nTeamsG: nG, nTeamsF: nF };
-  // Mise en évidence du bouton sélectionné
-  document.querySelectorAll('.sep-combo-btn').forEach(btn => {
-    const [g, f] = btn.dataset.key.split('_').map(Number);
-    const sel = g === nG && f === nF;
-    btn.style.borderColor = sel ? 'var(--primary)' : 'var(--border)';
-    btn.style.background  = sel ? '#e8f0fe' : '#fff';
+window.selectSex = (gender, nTeams) => {
+  if (!selectedSepCombo) selectedSepCombo = { nTeamsG: null, nTeamsF: null };
+  if (gender === 'G') selectedSepCombo.nTeamsG = nTeams;
+  else                selectedSepCombo.nTeamsF = nTeams;
+
+  const pr = curEleves().filter(e => !e.abs);
+  const nG = pr.filter(e => e.sx === 'G').length;
+  const nF = pr.filter(e => e.sx === 'F').length;
+
+  // Mettre en évidence les boutons de la colonne concernée
+  document.querySelectorAll(`button[data-gender="${gender}"]`).forEach(btn => {
+    const n   = parseInt(btn.dataset.n);
+    const sel = n === nTeams;
+    const color = gender === 'G' ? 'var(--boy)' : 'var(--girl)';
+    const bgSel = gender === 'G' ? '#e8f0fe' : '#fce4ec';
+    btn.style.borderColor = sel ? color : 'var(--border)';
+    btn.style.background  = sel ? bgSel : '#fff';
+    btn.style.color       = sel ? color : 'var(--text)';
+    btn.style.fontWeight  = sel ? '700' : '600';
   });
-  preview();
+
+  // Badge de confirmation sur le titre
+  const badge = gender === 'G' ? G('sel-boys-badge') : G('sel-girls-badge');
+  badge.textContent = `✓ ${nTeams} éq.`;
+  badge.style.display = 'inline-block';
+
+  updateSepComposeArea(nG, nF);
 };
+
+function updateSepComposeArea(nG, nF) {
+  const selG = selectedSepCombo?.nTeamsG;
+  const selF = selectedSepCombo?.nTeamsF;
+  const bothSelected = selG && selF;
+
+  G('sep-hint').style.display         = bothSelected ? 'none' : 'block';
+  G('sep-compose-wrap').style.display = bothSelected ? 'block' : 'none';
+
+  if (!bothSelected) return;
+
+  const bBase = Math.floor(nG/selG), bRem = nG%selG;
+  const fBase = Math.floor(nF/selF), fRem = nF%selF;
+  const bDesc = bRem > 0 ? `${bRem}×${bBase+1} + ${selG-bRem}×${bBase} j.` : `${selG}×${bBase} j.`;
+  const fDesc = fRem > 0 ? `${fRem}×${fBase+1} + ${selF-fRem}×${fBase} j.` : `${selF}×${fBase} j.`;
+
+  G('prev-sep').innerHTML = `<div class="al al-i" style="margin:0">
+    ♂ <strong>${selG} équipes garçons</strong> (${bDesc}) &nbsp;·&nbsp;
+    ♀ <strong>${selF} équipes filles</strong> (${fDesc}) &nbsp;·&nbsp;
+    <strong>${selG+selF} équipes au total</strong>
+  </div>`;
+}
 
 
 window.preview = () => {
@@ -867,25 +943,8 @@ window.preview = () => {
   const simil = eqVal === 'similaire';
   const isSep = mix === 'sep';
 
-  // Mode séparé : équipes garçons + équipes filles distinctes
-  if (isSep) {
-    const Gcount = pr.filter(e => e.sx === 'G').length;
-    const Fcount = pr.filter(e => e.sx === 'F').length;
-    if (!selectedSepCombo) {
-      G('prev').innerHTML = `<div class="al al-i">👆 Choisissez une configuration ci-dessus pour composer les équipes.</div>`;
-    } else {
-      const { nTeamsG, nTeamsF } = selectedSepCombo;
-      const bBase = Math.floor(Gcount/nTeamsG), bRem = Gcount%nTeamsG;
-      const fBase = Math.floor(Fcount/nTeamsF), fRem = Fcount%nTeamsF;
-      const bDesc = bRem > 0 ? `${bRem}×${bBase+1} + ${nTeamsG-bRem}×${bBase}` : `${nTeamsG}×${bBase}`;
-      const fDesc = fRem > 0 ? `${fRem}×${fBase+1} + ${nTeamsF-fRem}×${fBase}` : `${nTeamsF}×${fBase}`;
-      G('prev').innerHTML = `<div class="al al-i">
-        ✅ <strong>${nTeamsG} équipes ♂</strong> (${bDesc}) + <strong>${nTeamsF} équipes ♀</strong> (${fDesc})
-        = ${nTeamsG+nTeamsF} équipes au total · ${Gcount} garçons · ${Fcount} filles
-      </div>`;
-    }
-    return;
-  }
+  // Mode séparé : géré par updateSepComposeArea
+  if (isSep) return;
 
   let modeMsg = '';
   if (simil) {
