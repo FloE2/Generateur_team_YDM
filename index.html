@@ -325,12 +325,23 @@ input[type=text]{min-width:160px}
             </div>
           </div>
 
-          <!-- Sélecteur de sport -->
+          <!-- Créateur d'APSA libre -->
           <div style="margin-top:18px;padding-top:16px;border-top:1.5px solid var(--border)">
             <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">
-              🏅 Activité sportive — pour quel sport composez-vous ?
+              🏅 APSA — Nommez votre activité
             </div>
-            <div style="display:flex;flex-wrap:wrap;gap:7px" id="sport-picker"></div>
+            <!-- Créer une nouvelle APSA -->
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+              <input type="text" id="apsa-input" placeholder="Ex : Balle aux prisonniers, Tchoukball…"
+                style="flex:1;min-width:200px;max-width:360px"
+                onkeydown="if(event.key==='Enter')addApsa()"
+                oninput="updateApsaAddBtn()">
+              <button id="apsa-add-btn" class="btn btn-b btn-sm" onclick="addApsa()" style="opacity:.5;cursor:default" disabled>
+                ➕ Créer
+              </button>
+            </div>
+            <!-- APSAs existantes (créées ou avec équipes) -->
+            <div id="apsa-chips" style="display:flex;flex-wrap:wrap;gap:7px"></div>
           </div>
 
           <!-- MODE MIXTE : bouton Composer -->
@@ -537,25 +548,9 @@ let currentClassId = null;
 let editEleveId = null;
 let EQ = [];
 let selectedSepCombo = null;  // { nTeamsG, nTeamsF } en mode séparé
-let currentSport = null;      // clé du sport actif ex: 'FB'
-let savedSports  = {};        // { FB: {data,savedAt,...}, BB: {...}, ... }
+let currentSport = null;      // clé APSA active (slug)
+let savedSports  = {};        // { [slug]: { label, data, savedAt, ... } }
 let dbListener = null;
-
-// ── SPORTS ───────────────────────────────────────────
-const SPORTS = [
-  { key:'FB',  label:'Football',      icon:'⚽' },
-  { key:'BB',  label:'Basketball',    icon:'🏀' },
-  { key:'HB',  label:'Handball',      icon:'🤾' },
-  { key:'VB',  label:'Volley',        icon:'🏐' },
-  { key:'RG',  label:'Rugby',         icon:'🏉' },
-  { key:'BD',  label:'Badminton',     icon:'🏸' },
-  { key:'TT',  label:'Tennis table',  icon:'🏓' },
-  { key:'AT',  label:'Athlétisme',    icon:'🏃' },
-  { key:'NT',  label:'Natation',      icon:'🏊' },
-  { key:'SK',  label:'Ski',           icon:'⛷️' },
-  { key:'GY',  label:'Gym',           icon:'🤸' },
-  { key:'AU',  label:'Autre',         icon:'🎯' },
-];
 
 // ── UTILS ────────────────────────────────────────────
 const G  = id => document.getElementById(id);
@@ -677,13 +672,13 @@ window.selectClass = async id => {
         if (balInput) balInput.checked = true;
       }
       updateEqBadge();
-      renderSportPicker();
+      renderApsaChips();
       renderSportTabs();
       renderEQ();
     } else {
-      renderSportPicker();
+      renderApsaChips();
     }
-  } catch(e) { renderSportPicker(); }
+  } catch(e) { renderApsaChips(); }
 };
 
 function showNoClass() {
@@ -848,30 +843,101 @@ window.saveEdit = async () => {
   closeM();
 };
 
-// ── SPORTS ────────────────────────────────────────────
-function renderSportPicker() {
-  G('sport-picker').innerHTML = SPORTS.map(s => {
-    const isSel = currentSport === s.key;
-    const hasSaved = !!savedSports[s.key];
-    return `<button onclick="selectSport('${s.key}')"
-      style="padding:8px 13px;border:2.5px solid ${isSel ? 'var(--primary)' : (hasSaved ? '#43a047' : 'var(--border)')};
-             border-radius:20px;background:${isSel ? 'var(--primary)' : (hasSaved ? '#e8f5e9' : '#fff')};
-             color:${isSel ? '#fff' : (hasSaved ? '#2e7d32' : 'var(--text)')};
-             cursor:pointer;font-size:13px;font-weight:700;transition:all .15s;
-             display:inline-flex;align-items:center;gap:5px">
-      ${s.icon} ${s.key}${hasSaved ? ' ✓' : ''}
-    </button>`;
+// ── APSA (activités libres) ───────────────────────────
+
+function slugify(str) {
+  return str.trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'apsa';
+}
+
+window.updateApsaAddBtn = () => {
+  const v = G('apsa-input').value.trim();
+  const btn = G('apsa-add-btn');
+  btn.disabled = !v;
+  btn.style.opacity = v ? '1' : '.5';
+  btn.style.cursor  = v ? 'pointer' : 'default';
+};
+
+window.addApsa = () => {
+  const label = G('apsa-input').value.trim();
+  if (!label) return;
+  const key = slugify(label);
+  // Si la clé existe déjà on sélectionne juste
+  if (!savedSports[key]) {
+    savedSports[key] = { label, data: [] };
+  }
+  currentSport = key;
+  G('apsa-input').value = '';
+  updateApsaAddBtn();
+  renderApsaChips();
+  renderSportPicker(); // no-op maintenant mais garde compatibilité
+};
+
+function renderApsaChips() {
+  const el = G('apsa-chips');
+  const keys = Object.keys(savedSports);
+  if (!keys.length) { el.innerHTML = '<span style="font-size:13px;color:var(--muted)">Aucune APSA créée pour cette classe.</span>'; return; }
+
+  el.innerHTML = keys.map(key => {
+    const apsa = savedSports[key];
+    const isSel = currentSport === key;
+    const hasTeams = apsa?.data?.length > 0;
+    return `<div style="display:inline-flex;align-items:center;gap:0;
+              border:2.5px solid ${isSel ? 'var(--primary)' : (hasTeams ? 'var(--green)' : 'var(--border)')};
+              border-radius:20px;background:${isSel ? 'var(--primary)' : (hasTeams ? '#e8f5e9' : '#fff')};
+              overflow:hidden;transition:all .15s">
+      <button onclick="selectSport('${key}')"
+        style="padding:7px 13px;border:none;background:none;
+               color:${isSel ? '#fff' : (hasTeams ? 'var(--green)' : 'var(--text)')};
+               cursor:pointer;font-size:13px;font-weight:700">
+        ${apsa.label}${hasTeams ? ' ✓' : ''}
+      </button>
+      <button onclick="deleteApsa('${key}')" title="Supprimer cette APSA"
+        style="padding:6px 10px;border:none;border-left:2px solid ${isSel ? 'rgba(255,255,255,.3)' : 'var(--border)'};
+               background:none;color:${isSel ? 'rgba(255,255,255,.8)' : 'var(--muted)'};
+               cursor:pointer;font-size:15px;font-weight:700;line-height:1">
+        ×
+      </button>
+    </div>`;
   }).join('');
 }
 
 window.selectSport = key => {
   currentSport = key;
-  renderSportPicker();
-  // Si ce sport a déjà des équipes, les charger en mémoire
-  if (savedSports[key]?.data?.length) {
-    EQ = savedSports[key].data;
-  }
+  if (savedSports[key]?.data?.length) EQ = savedSports[key].data;
+  else EQ = [];
+  renderApsaChips();
+  renderSportTabs();
 };
+
+window.deleteApsa = async key => {
+  const apsa = savedSports[key];
+  const hasTeams = apsa?.data?.length > 0;
+  const msg = hasTeams
+    ? `Supprimer l'APSA "${apsa.label}" et ses ${apsa.data.length} équipe(s) sauvegardée(s) ?`
+    : `Supprimer l'APSA "${apsa.label}" ?`;
+  if (!confirm(msg)) return;
+  if (hasTeams) await remove(ref(db, `users/${uid}/classes/${currentClassId}/equipes_sport/${key}`));
+  delete savedSports[key];
+  if (currentSport === key) {
+    const remaining = Object.keys(savedSports).filter(k => savedSports[k]?.data?.length);
+    currentSport = remaining[0] || null;
+    EQ = currentSport ? (savedSports[currentSport]?.data || []) : [];
+  }
+  updateEqBadge();
+  renderApsaChips();
+  renderSportTabs();
+  if (EQ.length) renderEQ();
+  else G('eqcontent').innerHTML = '<div class="empty"><div class="em">⚽</div><p>Aucune équipe composée.<br>Allez dans <strong>Paramètres</strong> et cliquez sur "Composer les équipes".</p></div>';
+};
+
+function updateEqBadge() {
+  const total = Object.values(savedSports).reduce((s, v) => s + (v?.data?.length || 0), 0);
+  G('b-eq').textContent = total;
+}
+
+function renderSportPicker() { /* no-op – remplacé par renderApsaChips */ }
 
 function renderSportTabs() {
   const bar = G('sport-tabs-bar');
@@ -880,21 +946,24 @@ function renderSportTabs() {
   bar.style.display = 'flex';
 
   bar.innerHTML = sportKeys.map(key => {
-    const s = SPORTS.find(x => x.key === key) || { icon:'🎯', label: key };
+    const apsa = savedSports[key];
+    const label = apsa.label || key;
     const isSel = currentSport === key;
-    return `<div style="display:inline-flex;align-items:center;border:2.5px solid ${isSel ? 'var(--primary)' : 'var(--border)'};
-              border-radius:20px;background:${isSel ? 'var(--primary)' : '#fff'};overflow:hidden;transition:all .15s">
+    return `<div style="display:inline-flex;align-items:center;
+              border:2.5px solid ${isSel ? 'var(--primary)' : 'var(--border)'};
+              border-radius:20px;background:${isSel ? 'var(--primary)' : '#fff'};
+              overflow:hidden;transition:all .15s">
       <button onclick="switchSportTab('${key}')"
-        style="padding:7px 12px;border:none;background:none;
+        style="padding:7px 13px;border:none;background:none;
                color:${isSel ? '#fff' : 'var(--text)'};
-               cursor:pointer;font-size:13px;font-weight:700;display:flex;align-items:center;gap:5px">
-        ${s.icon} ${s.label} (${savedSports[key].data.length} éq.)
+               cursor:pointer;font-size:13px;font-weight:700">
+        ${label} <span style="opacity:.75;font-weight:400">(${apsa.data.length} éq.)</span>
       </button>
-      <button onclick="deleteSportTeams('${key}')"
-        title="Supprimer les équipes ${s.label}"
-        style="padding:6px 10px;border:none;border-left:1.5px solid ${isSel ? 'rgba(255,255,255,.3)' : 'var(--border)'};
-               background:none;color:${isSel ? 'rgba(255,255,255,.85)' : 'var(--red)'};
-               cursor:pointer;font-size:13px;font-weight:700;transition:all .15s">
+      <button onclick="deleteSportTeams('${key}')" title="Supprimer"
+        style="padding:6px 10px;border:none;
+               border-left:2px solid ${isSel ? 'rgba(255,255,255,.3)' : 'var(--border)'};
+               background:none;color:${isSel ? 'rgba(255,255,255,.8)' : 'var(--red)'};
+               cursor:pointer;font-size:15px;font-weight:700;line-height:1">
         ×
       </button>
     </div>`;
@@ -905,33 +974,26 @@ window.switchSportTab = key => {
   currentSport = key;
   if (savedSports[key]?.data?.length) EQ = savedSports[key].data;
   renderSportTabs();
+  renderApsaChips();
   renderEQ();
-  renderSportPicker();
 };
 
 window.deleteSportTeams = async key => {
-  const s = SPORTS.find(x => x.key === key) || { label: key };
-  if (!confirm(`Supprimer les équipes "${s.icon || ''} ${s.label}" ?`)) return;
+  const apsa = savedSports[key];
+  if (!confirm(`Supprimer les équipes "${apsa?.label || key}" ?`)) return;
   await remove(ref(db, `users/${uid}/classes/${currentClassId}/equipes_sport/${key}`));
-  delete savedSports[key];
+  if (savedSports[key]) savedSports[key].data = [];
   if (currentSport === key) {
     const remaining = Object.keys(savedSports).filter(k => savedSports[k]?.data?.length);
-    currentSport = remaining[0] || null;
-    EQ = currentSport ? (savedSports[currentSport]?.data || []) : [];
+    currentSport = remaining[0] || key; // garde la sélection sur l'APSA vidée
+    EQ = savedSports[currentSport]?.data?.length ? savedSports[currentSport].data : [];
   }
   updateEqBadge();
   renderSportTabs();
-  renderSportPicker();
+  renderApsaChips();
   if (EQ.length) renderEQ();
   else G('eqcontent').innerHTML = '<div class="empty"><div class="em">⚽</div><p>Aucune équipe composée.<br>Allez dans <strong>Paramètres</strong> et cliquez sur "Composer les équipes".</p></div>';
 };
-
-function updateEqBadge() {
-  const total = Object.values(savedSports).reduce((s, v) => s + (v?.data?.length || 0), 0);
-  G('b-eq').textContent = total;
-}
-
-// ── MIXITÉ SWITCH ─────────────────────────────────────
 window.onMixChange = () => {
   const isSep = document.querySelector('input[name=mix]:checked')?.value === 'sep';
   G('si-neq').style.display          = isSep ? 'none' : '';
@@ -1244,11 +1306,12 @@ window.compose = async () => {
     });
   }
 
-  if (!currentSport) { alert('Veuillez d\'abord choisir un sport dans le sélecteur "Activité sportive".'); return; }
+  if (!currentSport) { alert('Veuillez d\'abord créer et sélectionner une APSA.'); return; }
+  const sportLabel = savedSports[currentSport]?.label || currentSport;
 
   G('b-eq').textContent = EQ.length;
 
-  // Sauvegarde les équipes dans Firebase par sport
+  // Sauvegarde les équipes dans Firebase par APSA
   const eqToSave = EQ.map(t => ({
     id: t.id, genre: t.genre || null,
     joueurs: t.joueurs.map(p => ({
@@ -1257,6 +1320,7 @@ window.compose = async () => {
   }));
   const sportData = {
     sport: currentSport,
+    label: sportLabel,
     data: eqToSave,
     neq: parseInt(G('neq').value),
     njoueurs: parseInt(G('njoueurs').value),
@@ -1269,7 +1333,7 @@ window.compose = async () => {
   savedSports[currentSport] = sportData;
 
   updateEqBadge();
-  renderSportPicker();
+  renderApsaChips();
   renderEQ();
   showTab('equipes');
 };
@@ -1281,8 +1345,7 @@ function renderEQ() {
   const isSep  = EQ.some(t => t.genre);
   const isSimil = savedSports[currentSport]?.simil ||
     document.querySelector('input[name=eq]:checked')?.value === 'similaire';
-  const sportObj = SPORTS.find(s => s.key === currentSport);
-  const sportLabel = sportObj ? `${sportObj.icon} ${sportObj.label}` : (currentSport || '');
+  const sportLabel = currentSport ? (savedSports[currentSport]?.label || currentSport) : '';
 
   renderSportTabs();
 
