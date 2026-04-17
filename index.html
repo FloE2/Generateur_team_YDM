@@ -203,6 +203,7 @@ input[type=text]{min-width:160px}
     <button class="tb active" onclick="showTab('eleves')" id="tab-eleves">👥 Élèves <span class="badge" id="b-el">0</span></button>
     <button class="tb" onclick="showTab('params')" id="tab-params">⚙️ Paramètres</button>
     <button class="tb" onclick="showTab('equipes')" id="tab-equipes">🏆 Équipes <span class="badge" id="b-eq">0</span></button>
+    <button class="tb" onclick="showTab('eval')" id="tab-eval">📝 Évaluation</button>
   </div>
 
   <div class="content">
@@ -407,11 +408,56 @@ input[type=text]{min-width:160px}
         </div>
       </div>
 
+      <!-- ÉVALUATION -->
+      <div class="panel" id="panel-eval">
+
+        <!-- Sélecteur de grille -->
+        <div class="card" id="eval-apsa-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+            <div class="ct" style="margin:0">📝 Grilles d'évaluation</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap" id="eval-grid-tabs"></div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="text" id="eval-grid-input" placeholder="Nom de la grille (ex : Football, Balle aux prisonniers…)"
+              style="flex:1;min-width:200px;max-width:380px"
+              onkeydown="if(event.key==='Enter')addEvalGrid()"
+              oninput="updateEvalAddBtn()">
+            <button id="eval-grid-add-btn" class="btn btn-b btn-sm" onclick="addEvalGrid()" style="opacity:.5;cursor:default" disabled>
+              ➕ Nouvelle grille
+            </button>
+          </div>
+        </div>
+
+        <div id="eval-content">
+          <div class="empty"><div class="em">📝</div><p>Créez une grille d'évaluation ci-dessus<br>pour commencer à noter vos élèves.</p></div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
 
-<!-- MODAL EDIT ÉLÈVE -->
+<!-- MODAL ÉVALUATION : ajouter/modifier un critère -->
+<div class="mo" id="modal-critere" onclick="if(event.target===this)closeCritereModal()">
+  <div class="moc" style="max-width:400px">
+    <h3 id="modal-critere-title">➕ Ajouter un critère</h3>
+    <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:20px">
+      <div class="fg">
+        <label>Nom du critère</label>
+        <input type="text" id="critere-nom" placeholder="Ex : Passe, Tir, Technique, Règles…" style="width:100%"
+          onkeydown="if(event.key==='Enter')saveCritere()">
+      </div>
+      <div class="fg">
+        <label>Note maximale (points)</label>
+        <input type="number" id="critere-max" value="5" min="1" max="100" style="width:120px">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn" style="background:var(--bg);color:var(--text)" onclick="closeCritereModal()">Annuler</button>
+      <button class="btn btn-b" onclick="saveCritere()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
 <div class="mo" id="modal" onclick="if(event.target===this)closeM()">
   <div class="moc">
     <h3>✏️ Modifier l'élève</h3>
@@ -552,6 +598,11 @@ let currentSport = null;      // clé APSA active (slug)
 let savedSports  = {};        // { [slug]: { label, data, savedAt, ... } }
 let dbListener = null;
 
+// ── EVAL STATE ────────────────────────────────────────
+let evalGrids    = {};   // { [gridKey]: { label, criteres:[{id,nom,max}], notes:{[eleveId]:{[critereId]:val}} } }
+let currentGrid  = null; // clé de la grille active
+let editCritereId = null; // null = ajout, sinon id du critère en cours d'édition
+
 // ── UTILS ────────────────────────────────────────────
 const G  = id => document.getElementById(id);
 const st = n  => '★'.repeat(6-n) + '☆'.repeat(n-1);
@@ -639,6 +690,8 @@ window.selectClass = async id => {
   savedSports  = {};
   currentSport = null;
   selectedSepCombo = null;
+  evalGrids = {};
+  currentGrid = null;
   G('b-eq').textContent = '0';
   G('eqcontent').innerHTML = '<div class="empty"><div class="em">⚽</div><p>Aucune équipe composée.<br>Allez dans <strong>Paramètres</strong>.</p></div>';
   G('no-class-view').style.display = 'none';
@@ -679,6 +732,8 @@ window.selectClass = async id => {
       renderApsaChips();
     }
   } catch(e) { renderApsaChips(); }
+
+  await loadEvalGrids(id);
 };
 
 function showNoClass() {
@@ -717,6 +772,7 @@ window.showTab = t => {
   G('panel-' + t).classList.add('active');
   G('tab-' + t).classList.add('active');
   if (t === 'params') preview();
+  if (t === 'eval')   renderEvalContent();
 };
 
 // ── ÉLÈVES ───────────────────────────────────────────
@@ -1677,7 +1733,317 @@ window.exportExcel = () => {
   }
 };
 
-</script>
+// ════════════════════════════════════════════════════
+// ── ÉVALUATION ──────────────────────────────────────
+// ════════════════════════════════════════════════════
+
+// ── Helpers UI ─────────────────────────────────────
+window.updateEvalAddBtn = () => {
+  const v = G('eval-grid-input').value.trim();
+  const btn = G('eval-grid-add-btn');
+  btn.disabled = !v;
+  btn.style.opacity = v ? '1' : '.5';
+  btn.style.cursor  = v ? 'pointer' : 'default';
+};
+
+// ── Grilles ────────────────────────────────────────
+window.addEvalGrid = async () => {
+  const label = G('eval-grid-input').value.trim();
+  if (!label || !currentClassId) return;
+  const key = 'g_' + slugify(label) + '_' + Date.now();
+  const grid = { label, criteres: [], notes: {} };
+  evalGrids[key] = grid;
+  currentGrid = key;
+  await set(ref(db, `users/${uid}/classes/${currentClassId}/eval/${key}`), grid);
+  G('eval-grid-input').value = '';
+  updateEvalAddBtn();
+  renderEvalGridTabs();
+  renderEvalContent();
+};
+
+window.selectEvalGrid = key => {
+  currentGrid = key;
+  renderEvalGridTabs();
+  renderEvalContent();
+};
+
+window.deleteEvalGrid = async key => {
+  const g = evalGrids[key];
+  if (!confirm(`Supprimer la grille "${g?.label || key}" et toutes les notes ?`)) return;
+  await remove(ref(db, `users/${uid}/classes/${currentClassId}/eval/${key}`));
+  delete evalGrids[key];
+  if (currentGrid === key) {
+    currentGrid = Object.keys(evalGrids)[0] || null;
+  }
+  renderEvalGridTabs();
+  renderEvalContent();
+};
+
+function renderEvalGridTabs() {
+  const keys = Object.keys(evalGrids);
+  G('eval-grid-tabs').innerHTML = keys.map(key => {
+    const g = evalGrids[key];
+    const isSel = currentGrid === key;
+    return `<div style="display:inline-flex;align-items:center;
+              border:2.5px solid ${isSel ? 'var(--primary)' : 'var(--border)'};
+              border-radius:20px;background:${isSel ? 'var(--primary)' : '#fff'};
+              overflow:hidden;transition:all .15s">
+      <button onclick="selectEvalGrid('${key}')"
+        style="padding:6px 12px;border:none;background:none;
+               color:${isSel ? '#fff' : 'var(--text)'};
+               cursor:pointer;font-size:13px;font-weight:700">
+        ${g.label}
+      </button>
+      <button onclick="deleteEvalGrid('${key}')" title="Supprimer"
+        style="padding:5px 9px;border:none;border-left:2px solid ${isSel ? 'rgba(255,255,255,.3)' : 'var(--border)'};
+               background:none;color:${isSel ? 'rgba(255,255,255,.75)' : 'var(--muted)'};
+               cursor:pointer;font-size:14px;font-weight:700">×</button>
+    </div>`;
+  }).join('');
+}
+
+// ── Critères ────────────────────────────────────────
+window.openCritereModal = (id = null) => {
+  editCritereId = id;
+  G('modal-critere-title').textContent = id ? '✏️ Modifier le critère' : '➕ Ajouter un critère';
+  if (id) {
+    const c = evalGrids[currentGrid].criteres.find(c => c.id === id);
+    G('critere-nom').value = c.nom;
+    G('critere-max').value = c.max;
+  } else {
+    G('critere-nom').value = '';
+    G('critere-max').value = '5';
+  }
+  G('modal-critere').classList.add('open');
+  setTimeout(() => G('critere-nom').focus(), 80);
+};
+window.closeCritereModal = () => { G('modal-critere').classList.remove('open'); editCritereId = null; };
+
+window.saveCritere = async () => {
+  const nom = G('critere-nom').value.trim();
+  const max = Math.max(1, parseInt(G('critere-max').value) || 5);
+  if (!nom || !currentGrid) return;
+
+  const grid = evalGrids[currentGrid];
+  if (editCritereId) {
+    const c = grid.criteres.find(c => c.id === editCritereId);
+    if (c) { c.nom = nom; c.max = max; }
+  } else {
+    grid.criteres.push({ id: 'c' + Date.now(), nom, max });
+  }
+  await set(ref(db, `users/${uid}/classes/${currentClassId}/eval/${currentGrid}/criteres`), grid.criteres);
+  closeCritereModal();
+  renderEvalContent();
+};
+
+window.deleteCritere = async id => {
+  const grid = evalGrids[currentGrid];
+  grid.criteres = grid.criteres.filter(c => c.id !== id);
+  // Supprimer aussi les notes liées à ce critère
+  Object.keys(grid.notes || {}).forEach(eid => { if (grid.notes[eid]) delete grid.notes[eid][id]; });
+  await update(ref(db, `users/${uid}/classes/${currentClassId}/eval/${currentGrid}`), {
+    criteres: grid.criteres, notes: grid.notes || {}
+  });
+  renderEvalContent();
+};
+
+window.moveCritere = async (id, dir) => {
+  const grid = evalGrids[currentGrid];
+  const idx = grid.criteres.findIndex(c => c.id === id);
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= grid.criteres.length) return;
+  [grid.criteres[idx], grid.criteres[newIdx]] = [grid.criteres[newIdx], grid.criteres[idx]];
+  await set(ref(db, `users/${uid}/classes/${currentClassId}/eval/${currentGrid}/criteres`), grid.criteres);
+  renderEvalContent();
+};
+
+// ── Notes ──────────────────────────────────────────
+window.setNote = async (eleveId, critereId, val, max) => {
+  const numVal = Math.min(max, Math.max(0, parseFloat(val) || 0));
+  // Met à jour input si valeur a été corrigée
+  const inp = document.getElementById(`n_${eleveId}_${critereId}`);
+  if (inp && parseFloat(inp.value) !== numVal) inp.value = numVal;
+
+  const grid = evalGrids[currentGrid];
+  if (!grid.notes) grid.notes = {};
+  if (!grid.notes[eleveId]) grid.notes[eleveId] = {};
+  grid.notes[eleveId][critereId] = numVal;
+
+  await set(ref(db, `users/${uid}/classes/${currentClassId}/eval/${currentGrid}/notes/${eleveId}/${critereId}`), numVal);
+  // Met à jour la ligne totale dans le DOM sans re-render
+  updateEleveTotal(eleveId);
+};
+
+function getTotal(eleveId) {
+  const grid = evalGrids[currentGrid];
+  if (!grid?.criteres?.length) return { total: 0, maxTotal: 0 };
+  const notes = grid.notes?.[eleveId] || {};
+  let total = 0, maxTotal = 0;
+  grid.criteres.forEach(c => { total += parseFloat(notes[c.id] || 0); maxTotal += c.max; });
+  return { total: Math.round(total * 100) / 100, maxTotal };
+}
+
+function updateEleveTotal(eleveId) {
+  const { total, maxTotal } = getTotal(eleveId);
+  const el = document.getElementById(`tot_${eleveId}`);
+  if (!el) return;
+  const note20 = maxTotal ? Math.round(total / maxTotal * 20 * 100) / 100 : 0;
+  const pct = maxTotal ? total / maxTotal : 0;
+  const col = pct >= 0.7 ? '#43a047' : pct >= 0.5 ? '#fb8c00' : '#ea4335';
+  el.innerHTML = `<span style="font-weight:800;font-size:15px;color:${col}">${total}/${maxTotal}</span>
+    <span style="font-size:12px;color:var(--muted);margin-left:6px">= <strong style="color:${col}">${note20}/20</strong></span>`;
+}
+
+// ── Render principal ───────────────────────────────
+function renderEvalContent() {
+  if (!currentGrid || !evalGrids[currentGrid]) {
+    G('eval-content').innerHTML = '<div class="empty"><div class="em">📝</div><p>Créez une grille d\'évaluation ci-dessus<br>pour commencer à noter vos élèves.</p></div>';
+    return;
+  }
+
+  const grid   = evalGrids[currentGrid];
+  const eleves = curEleves().filter(e => !e.abs).sort((a,b) => a.nom.localeCompare(b.nom));
+  const total  = grid.criteres.reduce((s, c) => s + c.max, 0);
+
+  // ─ Bandeau info + actions ─
+  let html = `<div class="card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:16px">${grid.label}</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:2px">
+          ${grid.criteres.length} critère${grid.criteres.length!==1?'s':''} · Total sur <strong>${total} pts</strong>
+          ${total !== 20 && total > 0 ? `<span style="color:var(--primary)"> → ramené sur 20</span>` : ''}
+        </div>
+      </div>
+      <button class="btn btn-b btn-sm" onclick="openCritereModal()">➕ Critère</button>
+      <button class="btn btn-sm" style="background:#e8f0fe;color:var(--primary)" onclick="exportEvalExcel()">📊 Exporter</button>
+      <button class="btn btn-sm btn-b" onclick="window.print()">🖨️ Imprimer</button>
+    </div>`;
+
+  // ─ Critères ─
+  if (!grid.criteres.length) {
+    html += `<div class="al al-i">👆 Ajoutez au moins un critère pour commencer à noter.</div>`;
+  } else {
+    html += `<div style="display:flex;flex-wrap:wrap;gap:8px">`;
+    grid.criteres.forEach((c, i) => {
+      html += `<div style="display:flex;align-items:center;gap:6px;background:var(--bg);border-radius:10px;padding:8px 12px;font-size:13px">
+        <span style="font-weight:700">${c.nom}</span>
+        <span style="color:var(--muted)">/${c.max}</span>
+        <button onclick="openCritereModal('${c.id}')" class="ico-btn" style="font-size:13px" title="Modifier">✏️</button>
+        <button onclick="moveCritere('${c.id}',-1)" class="ico-btn" style="font-size:12px" ${i===0?'disabled style="opacity:.3"':''} title="Monter">⬆️</button>
+        <button onclick="moveCritere('${c.id}',1)" class="ico-btn" style="font-size:12px" ${i===grid.criteres.length-1?'disabled style="opacity:.3"':''} title="Descendre">⬇️</button>
+        <button onclick="deleteCritere('${c.id}')" class="ico-btn" style="font-size:13px;color:var(--red)" title="Supprimer">🗑️</button>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+  html += `</div>`;
+
+  // ─ Tableau des notes ─
+  if (grid.criteres.length && eleves.length) {
+    html += `<div class="card" style="padding:0;overflow:hidden">
+      <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:500px">
+        <thead>
+          <tr style="background:var(--bg)">
+            <th style="padding:12px 16px;text-align:left;font-weight:700;font-size:12px;color:var(--muted);text-transform:uppercase;white-space:nowrap;position:sticky;left:0;background:var(--bg);z-index:1">Élève</th>`;
+    grid.criteres.forEach(c => {
+      html += `<th style="padding:12px 10px;text-align:center;font-weight:700;font-size:12px;color:var(--muted);white-space:nowrap">
+        ${c.nom}<br><span style="font-weight:400">/${c.max}</span>
+      </th>`;
+    });
+    html += `<th style="padding:12px 16px;text-align:center;font-weight:700;font-size:12px;color:var(--muted);white-space:nowrap;min-width:140px">Total</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+    eleves.forEach((e, ri) => {
+      const { total: tot, maxTotal } = getTotal(e.id);
+      const note20 = maxTotal ? Math.round(tot / maxTotal * 20 * 100) / 100 : 0;
+      const pct = maxTotal ? tot / maxTotal : 0;
+      const col = pct >= 0.7 ? '#43a047' : pct >= 0.5 ? '#fb8c00' : '#ea4335';
+      html += `<tr style="border-top:1px solid var(--border);background:${ri%2===0?'#fff':'#fafafa'}">
+        <td style="padding:10px 16px;font-weight:600;white-space:nowrap;position:sticky;left:0;background:${ri%2===0?'#fff':'#fafafa'};z-index:1">
+          <div style="display:flex;align-items:center;gap:7px">
+            <span style="width:26px;height:26px;border-radius:50%;background:${e.sx==='G'?'var(--boy)':'var(--girl)'};color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${e.sx==='G'?'♂':'♀'}</span>
+            ${e.nom}
+          </div>
+        </td>`;
+      grid.criteres.forEach(c => {
+        const val = grid.notes?.[e.id]?.[c.id] ?? '';
+        html += `<td style="padding:6px 8px;text-align:center">
+          <input type="number" id="n_${e.id}_${c.id}"
+            value="${val}" min="0" max="${c.max}" step="0.5"
+            style="width:64px;text-align:center;border:1.5px solid var(--border);border-radius:6px;padding:6px 4px;font-size:13px;font-weight:600"
+            onchange="setNote('${e.id}','${c.id}',this.value,${c.max})"
+            oninput="setNote('${e.id}','${c.id}',this.value,${c.max})"
+            placeholder="—">
+        </td>`;
+      });
+      html += `<td style="padding:10px 16px;text-align:center" id="tot_${e.id}">
+        <span style="font-weight:800;font-size:15px;color:${col}">${tot}/${maxTotal}</span>
+        <span style="font-size:12px;color:var(--muted);margin-left:6px">= <strong style="color:${col}">${note20}/20</strong></span>
+      </td>
+      </tr>`;
+    });
+
+    html += `</tbody></table></div></div>`;
+  }
+
+  G('eval-content').innerHTML = html;
+}
+
+// ── Export Excel éval ──────────────────────────────
+window.exportEvalExcel = () => {
+  const grid = evalGrids[currentGrid]; if (!grid) return;
+  const eleves = curEleves().filter(e => !e.abs).sort((a,b) => a.nom.localeCompare(b.nom));
+  const clsNom = classes[currentClassId]?.nom || '';
+
+  const doExport = () => {
+    const wb = XLSX.utils.book_new();
+    const header = ['Élève', 'Sexe', ...grid.criteres.map(c => `${c.nom} (/${c.max})`), `Total /${grid.criteres.reduce((s,c)=>s+c.max,0)}`, 'Note /20'];
+    const rows = [header];
+    eleves.forEach(e => {
+      const notes = grid.notes?.[e.id] || {};
+      const critVals = grid.criteres.map(c => parseFloat(notes[c.id] || 0));
+      const tot = critVals.reduce((s,v) => s+v, 0);
+      const maxTot = grid.criteres.reduce((s,c) => s+c.max, 0);
+      const note20 = maxTot ? Math.round(tot / maxTot * 20 * 100) / 100 : 0;
+      rows.push([e.nom, e.sx === 'G' ? 'Garçon' : 'Fille', ...critVals, tot, note20]);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{ wch: 30 }, { wch: 8 }, ...grid.criteres.map(() => ({ wch: 14 })), { wch: 12 }, { wch: 10 }];
+    XLSX.utils.book_append_sheet(wb, ws, grid.label.slice(0, 31));
+    XLSX.writeFile(wb, `${clsNom}_eval_${grid.label}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
+  if (typeof XLSX !== 'undefined') doExport();
+  else {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = doExport;
+    document.head.appendChild(s);
+  }
+};
+
+// ── Chargement des grilles au changement de classe ─
+async function loadEvalGrids(classId) {
+  try {
+    const snap = await new Promise(res => {
+      onValue(ref(db, `users/${uid}/classes/${classId}/eval`), res, { onlyOnce: true });
+    });
+    evalGrids = snap.val() || {};
+    // Normalise criteres/notes (Firebase peut les omettre si vides)
+    Object.values(evalGrids).forEach(g => {
+      if (!g.criteres) g.criteres = [];
+      if (!g.notes)    g.notes    = {};
+    });
+    currentGrid = Object.keys(evalGrids)[0] || null;
+    renderEvalGridTabs();
+  } catch(e) { evalGrids = {}; currentGrid = null; }
+}
+
+
 <!-- FOOTER -->
 <footer style="text-align:center;padding:16px 24px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);background:#fff;margin-top:auto">
   Application développée par <strong>Florian Eude</strong> · Collège Yves du Manoir · Vaucresson &nbsp;©&nbsp;2025
