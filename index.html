@@ -203,7 +203,7 @@ input[type=text]{min-width:160px}
     <button class="tb active" onclick="showTab('eleves')" id="tab-eleves">👥 Élèves <span class="badge" id="b-el">0</span></button>
     <button class="tb" onclick="showTab('params')" id="tab-params">⚙️ Paramètres</button>
     <button class="tb" onclick="showTab('equipes')" id="tab-equipes">🏆 Équipes <span class="badge" id="b-eq">0</span></button>
-    <button class="tb" onclick="showTab('eval')" id="tab-eval">📝 Évaluation</button>
+    <button class="tb" onclick="showTab('eval')" id="tab-eval">🔒 Évaluation</button>
   </div>
 
   <div class="content">
@@ -767,6 +767,10 @@ window.deleteClass = async id => {
 
 // ── TABS ─────────────────────────────────────────────
 window.showTab = t => {
+  if (t === 'eval' && !evalUnlocked) {
+    openEvalLock();
+    return;
+  }
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tb').forEach(b => b.classList.remove('active'));
   G('panel-' + t).classList.add('active');
@@ -774,6 +778,35 @@ window.showTab = t => {
   if (t === 'params') preview();
   if (t === 'eval')   renderEvalContent();
 };
+
+let evalUnlocked = false;
+
+window.openEvalLock = () => {
+  G('eval-lock-input').value = '';
+  G('eval-lock-error').style.display = 'none';
+  G('modal-eval-lock').classList.add('open');
+  setTimeout(() => G('eval-lock-input').focus(), 80);
+};
+window.closeEvalLock = () => G('modal-eval-lock').classList.remove('open');
+window.checkEvalPassword = () => {
+  const val = G('eval-lock-input').value;
+  if (val === 'Eps 2026') {
+    evalUnlocked = true;
+    closeEvalLock();
+    // Ouvre réellement l'onglet
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tb').forEach(b => b.classList.remove('active'));
+    G('panel-eval').classList.add('active');
+    G('tab-eval').classList.add('active');
+    renderEvalContent();
+  } else {
+    G('eval-lock-error').style.display = 'block';
+    G('eval-lock-input').value = '';
+    G('eval-lock-input').focus();
+  }
+};
+// Verrouille automatiquement quand on quitte l'onglet éval
+window.lockEval = () => { evalUnlocked = false; };
 
 // ── ÉLÈVES ───────────────────────────────────────────
 window.addEleve = async () => {
@@ -2043,6 +2076,25 @@ async function loadEvalGrids(classId) {
   } catch(e) { evalGrids = {}; currentGrid = null; }
 }
 
+
+<!-- MODAL VERROU ÉVALUATION -->
+<div class="mo" id="modal-eval-lock" onclick="if(event.target===this)closeEvalLock()">
+  <div class="moc" style="max-width:360px;text-align:center">
+    <div style="font-size:48px;margin-bottom:12px">🔒</div>
+    <h3 style="margin-bottom:6px">Onglet protégé</h3>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:20px">Saisissez le mot de passe pour accéder aux évaluations.</p>
+    <input type="password" id="eval-lock-input" placeholder="Mot de passe…"
+      style="width:100%;margin-bottom:10px;text-align:center;font-size:15px;letter-spacing:2px"
+      onkeydown="if(event.key==='Enter')checkEvalPassword()">
+    <div id="eval-lock-error" style="display:none;color:var(--red);font-size:13px;font-weight:600;margin-bottom:10px">
+      ❌ Mot de passe incorrect
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="btn" style="background:var(--bg);color:var(--text)" onclick="closeEvalLock()">Annuler</button>
+      <button class="btn btn-b" onclick="checkEvalPassword()">🔓 Déverrouiller</button>
+    </div>
+  </div>
+</div>
 
 <!-- FOOTER -->
 <footer style="text-align:center;padding:16px 24px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);background:#fff;margin-top:auto">
