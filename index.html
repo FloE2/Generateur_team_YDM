@@ -767,7 +767,7 @@ window.deleteClass = async id => {
 
 // ── TABS ─────────────────────────────────────────────
 window.showTab = t => {
-  if (t === 'eval' && !evalUnlocked) {
+  if (t === 'eval') {
     openEvalLock();
     return;
   }
@@ -791,7 +791,6 @@ window.closeEvalLock = () => G('modal-eval-lock').classList.remove('open');
 window.checkEvalPassword = () => {
   const val = G('eval-lock-input').value;
   if (val === 'Eps 2026') {
-    evalUnlocked = true;
     closeEvalLock();
     // Ouvre réellement l'onglet
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
