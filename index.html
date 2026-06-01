@@ -616,6 +616,8 @@ let editCritereId = null; // null = ajout, sinon id du critère en cours d'édit
 const G  = id => document.getElementById(id);
 const st = n  => '★'.repeat(6-n) + '☆'.repeat(n-1);
 const COL = ['#e53935','#1e88e5','#43a047','#fb8c00','#8e24aa','#00897b','#6d4c41','#f06292'];
+// Couleurs personnalisées par équipe (index → couleur hex)
+let teamColors = {};
 
 function elevesOf(classId) {
   return classes[classId]?.eleves || {};
@@ -1002,8 +1004,12 @@ function renderApsaChips() {
 
 window.selectSport = key => {
   currentSport = key;
-  if (savedSports[key]?.data?.length) EQ = savedSports[key].data;
-  else EQ = [];
+  if (savedSports[key]?.data?.length) {
+    EQ = savedSports[key].data;
+    // Restaure les couleurs personnalisées
+    teamColors = {};
+    EQ.forEach((t, i) => { if (t.color) teamColors[i] = t.color; });
+  } else EQ = [];
   renderApsaChips();
   renderSportTabs();
 };
@@ -1069,7 +1075,11 @@ function renderSportTabs() {
 
 window.switchSportTab = key => {
   currentSport = key;
-  if (savedSports[key]?.data?.length) EQ = savedSports[key].data;
+  if (savedSports[key]?.data?.length) {
+    EQ = savedSports[key].data;
+    teamColors = {};
+    EQ.forEach((t, i) => { if (t.color) teamColors[i] = t.color; });
+  }
   renderSportTabs();
   renderApsaChips();
   renderEQ();
@@ -1409,8 +1419,8 @@ window.compose = async () => {
   G('b-eq').textContent = EQ.length;
 
   // Sauvegarde les équipes dans Firebase par APSA
-  const eqToSave = EQ.map(t => ({
-    id: t.id, genre: t.genre || null,
+  const eqToSave = EQ.map((t, i) => ({
+    id: t.id, genre: t.genre || null, color: teamColors[i] || null,
     joueurs: t.joueurs.map(p => ({
       id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num
     }))
@@ -1431,6 +1441,7 @@ window.compose = async () => {
 
   updateEqBadge();
   renderApsaChips();
+  teamColors = {};
   renderEQ();
   showTab('equipes');
 };
@@ -1486,10 +1497,20 @@ function renderEQ() {
             : `Niv.${nvMin}-${nvMax}`;
         })()
       : null;
+    const color = teamColors[teamIdx] || col;
     return `<div class="tc" data-team-idx="${teamIdx}">
-      <div class="th" style="background:${col}">
+      <div class="th" style="background:${color}">
         <span>${numLabel}</span>
-        <span class="eq-avg-badge" id="eq-avg-${teamIdx}" style="font-size:12px;opacity:.9">${nvBadge ? `★ ${nvBadge}` : `⭐${avg}`} · ${team.joueurs.length}j</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="eq-avg-badge" id="eq-avg-${teamIdx}" style="font-size:12px;opacity:.9">${nvBadge ? `★ ${nvBadge}` : `⭐${avg}`} · ${team.joueurs.length}j</span>
+          <label title="Changer la couleur" style="cursor:pointer;font-size:15px;opacity:.75;line-height:1;position:relative" onclick="event.stopPropagation()">
+            🎨
+            <input type="color" value="${color}" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none"
+              oninput="changeTeamColor(${teamIdx}, this.value)"
+              onchange="changeTeamColor(${teamIdx}, this.value)"
+              onclick="event.stopPropagation()">
+          </label>
+        </div>
       </div>
       <div class="tbody"
         data-team-idx="${teamIdx}"
@@ -1687,6 +1708,26 @@ window.confirmImport = async () => {
   G('btn-import-confirm').disabled = false;
   closeImport();
 };
+// ── COULEURS ÉQUIPES ─────────────────────────────────
+window.changeTeamColor = (teamIdx, color) => {
+  teamColors[teamIdx] = color;
+  // Mise à jour directe de l'en-tête sans re-render complet
+  const th = document.querySelector(`.tc[data-team-idx="${teamIdx}"] .th`);
+  if (th) th.style.background = color;
+  // Sauvegarde dans Firebase
+  if (currentSport && uid && currentClassId) {
+    const eqToSave = EQ.map((t, i) => ({
+      id: t.id, genre: t.genre || null, color: teamColors[i] || null,
+      joueurs: t.joueurs.map(p => ({ id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num }))
+    }));
+    const sportData = { ...(savedSports[currentSport] || {}), data: eqToSave, savedAt: Date.now() };
+    savedSports[currentSport] = sportData;
+    import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js").then(({ ref: fbRef, set: fbSet }) => {
+      fbSet(fbRef(db, `users/${uid}/classes/${currentClassId}/equipes_sport/${currentSport}`), sportData);
+    }).catch(() => {});
+  }
+};
+
 // ── DRAG & DROP ÉQUIPES ──────────────────────────────
 let dragState = null; // { playerId, fromTeamIdx }
 
@@ -1810,8 +1851,8 @@ function movePlayer(playerId, fromTeamIdx, toTeamIdx, targetPlayerId, insertBefo
 
   // Save to Firebase
   if (currentSport && uid && currentClassId) {
-    const eqToSave = EQ.map(t => ({
-      id: t.id, genre: t.genre || null,
+    const eqToSave = EQ.map((t, i) => ({
+      id: t.id, genre: t.genre || null, color: teamColors[i] || null,
       joueurs: t.joueurs.map(p => ({ id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num }))
     }));
     const sportData = { ...(savedSports[currentSport] || {}), data: eqToSave, savedAt: Date.now() };
