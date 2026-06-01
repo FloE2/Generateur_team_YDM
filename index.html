@@ -126,12 +126,12 @@ input[type=text]{min-width:160px}
 .al-w{background:var(--absent);border:1px solid #f5c6c2;color:#c62828}
 
 /* DRAG & DROP */
-.pr[draggable]{cursor:grab;transition:opacity .15s,transform .15s,box-shadow .15s}
+.pr[draggable]{cursor:grab;transition:opacity .15s,transform .15s}
 .pr[draggable]:active{cursor:grabbing}
 .pr.dragging{opacity:.35;transform:scale(.97)}
-.pr.drag-over{outline:2.5px dashed var(--primary);outline-offset:-2px;background:#e8f0fe!important}
-.tbody.drop-target{background:#f0f7ff;outline:2.5px dashed var(--primary);outline-offset:-4px;border-radius:0 0 12px 12px;min-height:40px;transition:background .15s}
-.tc .th .drag-handle{opacity:.45;font-size:13px;cursor:default;user-select:none}
+.pr.insert-above{border-top:3px solid var(--primary)!important;margin-top:-1px}
+.pr.insert-below{border-bottom:3px solid var(--primary)!important;margin-bottom:-1px}
+.tbody.drop-target-empty{background:#f0f7ff;outline:2.5px dashed var(--primary);outline-offset:-4px;border-radius:0 0 12px 12px;min-height:40px;transition:background .15s}
 .eq-avg-badge{transition:all .3s}
 
 /* SEARCH */
@@ -1690,6 +1690,13 @@ window.confirmImport = async () => {
 // ── DRAG & DROP ÉQUIPES ──────────────────────────────
 let dragState = null; // { playerId, fromTeamIdx }
 
+function clearDragVisuals() {
+  document.querySelectorAll('.insert-above,.insert-below').forEach(el => {
+    el.classList.remove('insert-above','insert-below');
+  });
+  document.querySelectorAll('.drop-target-empty').forEach(el => el.classList.remove('drop-target-empty'));
+}
+
 window.dragStart = (e) => {
   const el = e.currentTarget;
   dragState = {
@@ -1698,97 +1705,110 @@ window.dragStart = (e) => {
   };
   el.classList.add('dragging');
   e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setData('text/plain', ''); // required for Firefox
+  e.dataTransfer.setData('text/plain', '');
 };
 
 window.dragEnd = (e) => {
   e.currentTarget.classList.remove('dragging');
-  // Clean up all visual states
-  document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
-  document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+  clearDragVisuals();
+  dragState = null;
 };
 
+// Called on each .pr (player row)
 window.dragOverPlayer = (e) => {
   e.preventDefault();
+  e.stopPropagation();
   e.dataTransfer.dropEffect = 'move';
   const el = e.currentTarget;
-  const toTeamIdx = parseInt(el.dataset.teamIdx);
-  if (!dragState || (dragState.playerId === el.dataset.playerId)) return;
-  document.querySelectorAll('.drag-over').forEach(x => x.classList.remove('drag-over'));
-  el.classList.add('drag-over');
+  if (!dragState || dragState.playerId === el.dataset.playerId) return;
+  clearDragVisuals();
+  // Show insert line above or below based on cursor position
+  const rect = el.getBoundingClientRect();
+  const mid  = rect.top + rect.height / 2;
+  if (e.clientY < mid) {
+    el.classList.add('insert-above');
+  } else {
+    el.classList.add('insert-below');
+  }
 };
 
 window.dragLeavePlayer = (e) => {
-  e.currentTarget.classList.remove('drag-over');
+  if (!e.currentTarget.contains(e.relatedTarget)) {
+    e.currentTarget.classList.remove('insert-above','insert-below');
+  }
 };
 
+// Called on .tbody (team body), only fires when NOT over a child .pr
 window.dragOverTeam = (e) => {
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
-  const el = e.currentTarget;
-  document.querySelectorAll('.drop-target').forEach(x => x.classList.remove('drop-target'));
-  el.classList.add('drop-target');
+  clearDragVisuals();
+  e.currentTarget.classList.add('drop-target-empty');
 };
 
 window.dragLeaveTeam = (e) => {
-  // Only remove if leaving the tbody itself, not a child
   if (!e.currentTarget.contains(e.relatedTarget)) {
-    e.currentTarget.classList.remove('drop-target');
+    e.currentTarget.classList.remove('drop-target-empty');
   }
 };
 
 window.dropOnPlayer = (e) => {
   e.preventDefault();
   e.stopPropagation();
-  const targetEl = e.currentTarget;
-  const toTeamIdx = parseInt(targetEl.dataset.teamIdx);
-  const targetPlayerId = targetEl.dataset.playerId;
   if (!dragState) return;
-  const { playerId, fromTeamIdx } = dragState;
-  if (playerId === targetPlayerId) return;
-  movePlayer(playerId, fromTeamIdx, toTeamIdx, targetPlayerId);
+  const targetEl = e.currentTarget;
+  if (dragState.playerId === targetEl.dataset.playerId) return;
+
+  const toTeamIdx     = parseInt(targetEl.dataset.teamIdx);
+  const targetPlayerId = targetEl.dataset.playerId;
+
+  // Determine insert position (above or below)
+  const rect = targetEl.getBoundingClientRect();
+  const insertBefore = e.clientY < rect.top + rect.height / 2;
+
+  clearDragVisuals();
+  movePlayer(dragState.playerId, dragState.fromTeamIdx, toTeamIdx, targetPlayerId, insertBefore);
 };
 
 window.dropOnTeam = (e) => {
   e.preventDefault();
-  const toTeamIdx = parseInt(e.currentTarget.dataset.teamIdx);
   if (!dragState) return;
-  const { playerId, fromTeamIdx } = dragState;
-  if (fromTeamIdx === toTeamIdx) return;
-  movePlayer(playerId, fromTeamIdx, toTeamIdx, null);
+  // Only fires when dropped on empty space of tbody (not on a .pr)
+  const toTeamIdx = parseInt(e.currentTarget.dataset.teamIdx);
+  clearDragVisuals();
+  movePlayer(dragState.playerId, dragState.fromTeamIdx, toTeamIdx, null, false);
 };
 
-function movePlayer(playerId, fromTeamIdx, toTeamIdx, swapWithPlayerId) {
-  dragState = null;
+// insertBeforeTarget: insert before or after the target player (null target = append)
+function movePlayer(playerId, fromTeamIdx, toTeamIdx, targetPlayerId, insertBefore) {
   const fromTeam = EQ[fromTeamIdx];
   const toTeam   = EQ[toTeamIdx];
   if (!fromTeam || !toTeam) return;
 
   const playerIdx = fromTeam.joueurs.findIndex(p => p.id === playerId);
   if (playerIdx === -1) return;
-  const player = fromTeam.joueurs[playerIdx];
+  const [player] = fromTeam.joueurs.splice(playerIdx, 1);
 
-  if (swapWithPlayerId) {
-    // Swap with target player
-    const targetIdx = toTeam.joueurs.findIndex(p => p.id === swapWithPlayerId);
-    if (targetIdx === -1) return;
-    const targetPlayer = toTeam.joueurs[targetIdx];
-
-    fromTeam.joueurs.splice(playerIdx, 1, targetPlayer);
-    toTeam.joueurs.splice(targetIdx, 1, player);
+  if (targetPlayerId) {
+    // Find target position in toTeam (after the splice above, in case same team)
+    let targetIdx = toTeam.joueurs.findIndex(p => p.id === targetPlayerId);
+    if (targetIdx === -1) {
+      toTeam.joueurs.push(player); // fallback
+    } else {
+      const insertAt = insertBefore ? targetIdx : targetIdx + 1;
+      toTeam.joueurs.splice(insertAt, 0, player);
+    }
   } else {
-    // Move to end of target team
-    fromTeam.joueurs.splice(playerIdx, 1);
     toTeam.joueurs.push(player);
   }
 
-  // Renumber
+  // Renumber both teams
   fromTeam.joueurs.forEach((p, i) => p.num = i + 1);
-  toTeam.joueurs.forEach((p, i) => p.num = i + 1);
+  if (fromTeamIdx !== toTeamIdx) toTeam.joueurs.forEach((p, i) => p.num = i + 1);
 
   renderEQ();
 
-  // Save updated EQ to Firebase
+  // Save to Firebase
   if (currentSport && uid && currentClassId) {
     const eqToSave = EQ.map(t => ({
       id: t.id, genre: t.genre || null,
