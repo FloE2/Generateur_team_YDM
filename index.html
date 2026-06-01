@@ -125,6 +125,15 @@ input[type=text]{min-width:160px}
 .al-i{background:#e8f0fe;border:1px solid #aecbfa;color:var(--primary)}
 .al-w{background:var(--absent);border:1px solid #f5c6c2;color:#c62828}
 
+/* DRAG & DROP */
+.pr[draggable]{cursor:grab;transition:opacity .15s,transform .15s,box-shadow .15s}
+.pr[draggable]:active{cursor:grabbing}
+.pr.dragging{opacity:.35;transform:scale(.97)}
+.pr.drag-over{outline:2.5px dashed var(--primary);outline-offset:-2px;background:#e8f0fe!important}
+.tbody.drop-target{background:#f0f7ff;outline:2.5px dashed var(--primary);outline-offset:-4px;border-radius:0 0 12px 12px;min-height:40px;transition:background .15s}
+.tc .th .drag-handle{opacity:.45;font-size:13px;cursor:default;user-select:none}
+.eq-avg-badge{transition:all .3s}
+
 /* SEARCH */
 .sw{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
 .sb{position:relative;flex:1;min-width:180px}
@@ -1448,14 +1457,23 @@ function renderEQ() {
       <button class="btn btn-sm btn-b" onclick="window.print()">🖨️ Imprimer</button>
     </div>`;
 
-  const rowJ = j => `
-    <div class="pr" style="background:${j.sx==='G'?'#e8f0fe':'#fce4ec'}">
+  const rowJ = (j, teamIdx) => `
+    <div class="pr"
+      draggable="true"
+      data-player-id="${j.id}"
+      data-team-idx="${teamIdx}"
+      style="background:${j.sx==='G'?'#e8f0fe':'#fce4ec'}"
+      ondragstart="dragStart(event)"
+      ondragend="dragEnd(event)"
+      ondragover="dragOverPlayer(event)"
+      ondragleave="dragLeavePlayer(event)"
+      ondrop="dropOnPlayer(event)">
       <div class="pnum">${j.num}</div>
       <div class="pname">${j.nom}</div>
       <span style="font-size:18px;font-weight:900;color:${j.sx==='G'?'var(--boy)':'var(--girl)'}">${j.sx==='G'?'♂\uFE0E':'♀\uFE0E'}</span>
     </div>`;
 
-  const renderTeamCard = (team, numLabel, col) => {
+  const renderTeamCard = (team, numLabel, col, teamIdx) => {
     const avg = team.joueurs.length
       ? (team.joueurs.reduce((s,p) => s+p.nv,0) / team.joueurs.length).toFixed(1)
       : '-';
@@ -1468,12 +1486,16 @@ function renderEQ() {
             : `Niv.${nvMin}-${nvMax}`;
         })()
       : null;
-    return `<div class="tc">
+    return `<div class="tc" data-team-idx="${teamIdx}">
       <div class="th" style="background:${col}">
         <span>${numLabel}</span>
-        <span style="font-size:12px;opacity:.9">${nvBadge ? `★ ${nvBadge}` : `⭐${avg}`} · ${team.joueurs.length}j</span>
+        <span class="eq-avg-badge" id="eq-avg-${teamIdx}" style="font-size:12px;opacity:.9">${nvBadge ? `★ ${nvBadge}` : `⭐${avg}`} · ${team.joueurs.length}j</span>
       </div>
-      <div class="tbody">${team.joueurs.map(rowJ).join('')}</div>
+      <div class="tbody"
+        data-team-idx="${teamIdx}"
+        ondragover="dragOverTeam(event)"
+        ondragleave="dragLeaveTeam(event)"
+        ondrop="dropOnTeam(event)">${team.joueurs.map(j => rowJ(j, teamIdx)).join('')}</div>
     </div>`;
   };
 
@@ -1485,21 +1507,21 @@ function renderEQ() {
     html += `<div style="font-weight:700;color:var(--boy);font-size:15px;margin:8px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--boy)">♂ Équipes Garçons</div>`;
     html += `<div class="tgrid">`;
     boysTeams.forEach((team, i) => {
-      html += renderTeamCard(team, `Équipe ♂ ${i+1}`, COL[i % COL.length]);
+      html += renderTeamCard(team, `Équipe ♂ ${i+1}`, COL[i % COL.length], EQ.indexOf(team));
     });
     html += `</div>`;
 
     html += `<div style="font-weight:700;color:var(--girl);font-size:15px;margin:20px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--girl)">♀ Équipes Filles</div>`;
     html += `<div class="tgrid">`;
     girlsTeams.forEach((team, i) => {
-      html += renderTeamCard(team, `Équipe ♀ ${i+1}`, COL[(i + boysTeams.length) % COL.length]);
+      html += renderTeamCard(team, `Équipe ♀ ${i+1}`, COL[(i + boysTeams.length) % COL.length], EQ.indexOf(team));
     });
     html += `</div>`;
 
   } else {
     html += `<div class="tgrid">`;
     EQ.forEach((team, i) => {
-      html += renderTeamCard(team, `Équipe ${i+1}`, COL[i % COL.length]);
+      html += renderTeamCard(team, `Équipe ${i+1}`, COL[i % COL.length], i);
     });
     html += `</div>`;
   }
@@ -1665,6 +1687,121 @@ window.confirmImport = async () => {
   G('btn-import-confirm').disabled = false;
   closeImport();
 };
+// ── DRAG & DROP ÉQUIPES ──────────────────────────────
+let dragState = null; // { playerId, fromTeamIdx }
+
+window.dragStart = (e) => {
+  const el = e.currentTarget;
+  dragState = {
+    playerId: el.dataset.playerId,
+    fromTeamIdx: parseInt(el.dataset.teamIdx)
+  };
+  el.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', ''); // required for Firefox
+};
+
+window.dragEnd = (e) => {
+  e.currentTarget.classList.remove('dragging');
+  // Clean up all visual states
+  document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+  document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+};
+
+window.dragOverPlayer = (e) => {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const el = e.currentTarget;
+  const toTeamIdx = parseInt(el.dataset.teamIdx);
+  if (!dragState || (dragState.playerId === el.dataset.playerId)) return;
+  document.querySelectorAll('.drag-over').forEach(x => x.classList.remove('drag-over'));
+  el.classList.add('drag-over');
+};
+
+window.dragLeavePlayer = (e) => {
+  e.currentTarget.classList.remove('drag-over');
+};
+
+window.dragOverTeam = (e) => {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const el = e.currentTarget;
+  document.querySelectorAll('.drop-target').forEach(x => x.classList.remove('drop-target'));
+  el.classList.add('drop-target');
+};
+
+window.dragLeaveTeam = (e) => {
+  // Only remove if leaving the tbody itself, not a child
+  if (!e.currentTarget.contains(e.relatedTarget)) {
+    e.currentTarget.classList.remove('drop-target');
+  }
+};
+
+window.dropOnPlayer = (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  const targetEl = e.currentTarget;
+  const toTeamIdx = parseInt(targetEl.dataset.teamIdx);
+  const targetPlayerId = targetEl.dataset.playerId;
+  if (!dragState) return;
+  const { playerId, fromTeamIdx } = dragState;
+  if (playerId === targetPlayerId) return;
+  movePlayer(playerId, fromTeamIdx, toTeamIdx, targetPlayerId);
+};
+
+window.dropOnTeam = (e) => {
+  e.preventDefault();
+  const toTeamIdx = parseInt(e.currentTarget.dataset.teamIdx);
+  if (!dragState) return;
+  const { playerId, fromTeamIdx } = dragState;
+  if (fromTeamIdx === toTeamIdx) return;
+  movePlayer(playerId, fromTeamIdx, toTeamIdx, null);
+};
+
+function movePlayer(playerId, fromTeamIdx, toTeamIdx, swapWithPlayerId) {
+  dragState = null;
+  const fromTeam = EQ[fromTeamIdx];
+  const toTeam   = EQ[toTeamIdx];
+  if (!fromTeam || !toTeam) return;
+
+  const playerIdx = fromTeam.joueurs.findIndex(p => p.id === playerId);
+  if (playerIdx === -1) return;
+  const player = fromTeam.joueurs[playerIdx];
+
+  if (swapWithPlayerId) {
+    // Swap with target player
+    const targetIdx = toTeam.joueurs.findIndex(p => p.id === swapWithPlayerId);
+    if (targetIdx === -1) return;
+    const targetPlayer = toTeam.joueurs[targetIdx];
+
+    fromTeam.joueurs.splice(playerIdx, 1, targetPlayer);
+    toTeam.joueurs.splice(targetIdx, 1, player);
+  } else {
+    // Move to end of target team
+    fromTeam.joueurs.splice(playerIdx, 1);
+    toTeam.joueurs.push(player);
+  }
+
+  // Renumber
+  fromTeam.joueurs.forEach((p, i) => p.num = i + 1);
+  toTeam.joueurs.forEach((p, i) => p.num = i + 1);
+
+  renderEQ();
+
+  // Save updated EQ to Firebase
+  if (currentSport && uid && currentClassId) {
+    const eqToSave = EQ.map(t => ({
+      id: t.id, genre: t.genre || null,
+      joueurs: t.joueurs.map(p => ({ id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num }))
+    }));
+    const sportData = { ...(savedSports[currentSport] || {}), data: eqToSave, savedAt: Date.now() };
+    savedSports[currentSport] = sportData;
+    import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js").then(({ ref: fbRef, set: fbSet }) => {
+      fbSet(fbRef(db, `users/${uid}/classes/${currentClassId}/equipes_sport/${currentSport}`), sportData);
+    }).catch(() => {});
+  }
+}
+
 // ── EXPORT EXCEL ─────────────────────────────────────────────────────
 window.exportExcel = () => {
   if (!EQ.length) return;
