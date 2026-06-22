@@ -119,6 +119,23 @@ input[type=text]{min-width:160px}
 .pr.sub .pnum{background:#fff9c4;color:#f9a825;border:1.5px dashed #f9a825}
 .pname{flex:1;font-size:13px;font-weight:600}
 .sdiv{padding:5px 16px;background:#fff9c4;font-size:11px;font-weight:700;color:#f57f17;text-transform:uppercase;letter-spacing:1px}
+/* ── BADGES OPTIONS ── */
+.opt-badge{display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;margin:1px 2px 1px 0;letter-spacing:.3px}
+.opt-badge.lca{background:#ede7f6;color:#4527a0;border:1px solid #b39ddb}
+.opt-badge.lce{background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7}
+.opt-badge.all{background:#e3f2fd;color:#0d47a1;border:1px solid #90caf9}
+.opt-badge.esp{background:#fff3e0;color:#bf360c;border:1px solid #ffcc80}
+.opts-check-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.opts-check-row label{display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:3px 8px;border-radius:5px;border:1px solid var(--border);background:var(--bg)}
+.opts-check-row label:hover{border-color:var(--primary)}
+.opts-check-row input[type=checkbox]{cursor:pointer}
+/* filtre options dans onglet élèves */
+.opt-filter-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.opt-filter-btn{padding:4px 11px;font-size:12px;font-weight:600;border-radius:20px;border:1.5px solid var(--border);background:#fff;cursor:pointer;transition:all .15s}
+.opt-filter-btn.active-lca{background:#ede7f6;border-color:#7c4dff;color:#4527a0}
+.opt-filter-btn.active-lce{background:#e8f5e9;border-color:#43a047;color:#1b5e20}
+.opt-filter-btn.active-all{background:#e3f2fd;border-color:#1976d2;color:#0d47a1}
+.opt-filter-btn.active-esp{background:#fff3e0;border-color:#f4511e;color:#bf360c}
 
 /* ALERTS */
 .al{border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:14px;line-height:1.6}
@@ -300,6 +317,15 @@ input[type=text]{min-width:160px}
           <button class="btn btn-sm" style="background:#e8f5e9;color:#2e7d32" onclick="allPresent()">✅ Tous présents</button>
           <button class="btn btn-sm" style="background:var(--absent);color:var(--red)" onclick="allAbsent()">😴 Tous absents</button>
         </div>
+        <div class="opt-filter-row">
+          <span style="font-size:12px;color:var(--muted);font-weight:600">Filtrer par option :</span>
+          <button class="opt-filter-btn" id="fopt-all" onclick="toggleOptFilter('')">Tous</button>
+          <button class="opt-filter-btn" id="fopt-lca" onclick="toggleOptFilter('lca')">LCA Latin</button>
+          <button class="opt-filter-btn" id="fopt-lce" onclick="toggleOptFilter('lce')">LCE</button>
+          <button class="opt-filter-btn" id="fopt-all2" onclick="toggleOptFilter('all')">Allemand</button>
+          <button class="opt-filter-btn" id="fopt-esp" onclick="toggleOptFilter('esp')">Espagnol</button>
+          <button class="opt-filter-btn" id="fopt-noopt" onclick="toggleOptFilter('aucune')">Sans option</button>
+        </div>
 
         <div class="sgrid" id="list"></div>
       </div>
@@ -392,6 +418,11 @@ input[type=text]{min-width:160px}
               👆 Choisissez un nombre d'équipes pour les garçons <em>et</em> pour les filles
             </div>
           </div>
+        </div>
+
+        <div class="card" id="opt-stats-card">
+          <div class="ct">🎓 Répartition des options (classe active)</div>
+          <div id="opt-stats-content" style="display:flex;gap:10px;flex-wrap:wrap"></div>
         </div>
 
         <div class="card">
@@ -777,6 +808,31 @@ window.deleteClass = async id => {
 };
 
 // ── TABS ─────────────────────────────────────────────
+function renderOptStats() {
+  const el = G('opt-stats-content'); if (!el) return;
+  const all = curEleves();
+  const pr  = all.filter(e => !e.abs);
+  const OPT_LABELS = { lca: 'LCA Latin', lce: 'LCE', all: 'Allemand', esp: 'Espagnol' };
+  const colors = { lca:'#ede7f6;color:#4527a0', lce:'#e8f5e9;color:#1b5e20', all:'#e3f2fd;color:#0d47a1', esp:'#fff3e0;color:#bf360c' };
+  let html = '';
+  Object.entries(OPT_LABELS).forEach(([k, label]) => {
+    const n = pr.filter(e => (e.opts||[]).includes(k)).length;
+    const g = pr.filter(e => (e.opts||[]).includes(k) && e.sx==='G').length;
+    const f = pr.filter(e => (e.opts||[]).includes(k) && e.sx==='F').length;
+    html += `<div class="chip" style="background:${colors[k]};flex-direction:column;align-items:flex-start;gap:2px;padding:8px 14px;border-radius:8px">
+      <span style="font-size:12px;font-weight:700">${label}</span>
+      <span style="font-size:15px;font-weight:800">${n} élève${n>1?'s':''}</span>
+      <span style="font-size:11px;opacity:.8">♂ ${g} · ♀ ${f}</span>
+    </div>`;
+  });
+  const sansOpt = pr.filter(e => !e.opts || e.opts.length === 0).length;
+  html += `<div class="chip" style="flex-direction:column;align-items:flex-start;gap:2px;padding:8px 14px;border-radius:8px">
+    <span style="font-size:12px;font-weight:700;color:var(--muted)">Sans option</span>
+    <span style="font-size:15px;font-weight:800">${sansOpt}</span>
+  </div>`;
+  el.innerHTML = html;
+}
+
 window.showTab = t => {
   if (t === 'eval') {
     openEvalLock();
@@ -786,7 +842,7 @@ window.showTab = t => {
   document.querySelectorAll('.tb').forEach(b => b.classList.remove('active'));
   G('panel-' + t).classList.add('active');
   G('tab-' + t).classList.add('active');
-  if (t === 'params') preview();
+  if (t === 'params') { preview(); renderOptStats(); }
   if (t === 'eval')   renderEvalContent();
 };
 
@@ -835,7 +891,15 @@ window.renderEleves = () => {
   if (!currentClassId) return;
   const q  = (G('q').value || '').toLowerCase();
   const fs = G('fsx').value;
-  let L = curEleves().filter(e => e.nom.toLowerCase().includes(q) && (!fs || e.sx === fs));
+  const fo = window._optFilter || '';
+  let L = curEleves().filter(e => {
+    if (!e.nom.toLowerCase().includes(q)) return false;
+    if (fs && e.sx !== fs) return false;
+    if (fo === 'aucune') return !e.opts || e.opts.length === 0;
+    if (fo) return e.opts && e.opts.includes(fo);
+    return true;
+  });
+
   // Tri : présents avant absents, puis NOM de famille (mots en majuscules), puis prénom
   const splitNom = str => {
     const parts = str.trim().split(/\s+/);
@@ -853,13 +917,21 @@ window.renderEleves = () => {
 
   // Couleur selon niveau : nv5=vert(fort), nv3=jaune, nv1=rouge(faible)
   const nvColor = ['','#ea4335','#ff7043','#fbbc04','#8bc34a','#43a047'];
+  const OPT_LABELS = { lca: 'LCA Latin', lce: 'LCE', all: 'Allemand', esp: 'Espagnol' };
 
   const el = G('list');
   el.innerHTML = !L.length
     ? '<div class="empty" style="grid-column:1/-1"><div class="em">👀</div><p>Aucun élève trouvé.</p></div>'
     : L.map(e => {
       const col = nvColor[e.nv];
-      const nbOn = e.nv; // nv5=5★ fort, nv1=1★ faible
+      const nbOn = e.nv;
+      const opts = e.opts || [];
+      const badgesHtml = opts.map(o => `<span class="opt-badge ${o}">${OPT_LABELS[o]||o}</span>`).join('');
+      const checksHtml = Object.entries(OPT_LABELS).map(([k, label]) => `
+        <label style="display:inline-flex;align-items:center;gap:3px;font-size:11px;cursor:pointer;padding:2px 6px;border-radius:4px;border:1px solid var(--border);background:${opts.includes(k)?'#f3f0ff':'var(--bg)'}">
+          <input type="checkbox" ${opts.includes(k)?'checked':''} onchange="toggleOpt('${e.id}','${k}',this.checked)" style="cursor:pointer">
+          ${label}
+        </label>`).join('');
       return `
       <div class="sc ${e.abs ? 'absent' : ''}">
         <div class="gab ${e.sx}">${e.sx === 'G' ? '♂' : '♀'}</div>
@@ -869,7 +941,9 @@ window.renderEleves = () => {
             <span>${e.sx === 'G' ? 'Garçon' : 'Fille'}</span>
             ${e.abs ? '<span style="color:var(--red);font-weight:700;font-size:11px">ABSENT</span>' : ''}
           </div>
-          <div class="inline-stars" title="Cliquer pour changer le niveau">
+          ${badgesHtml ? `<div style="margin-top:3px">${badgesHtml}</div>` : ''}
+          <div class="opts-check-row" style="margin-top:5px">${checksHtml}</div>
+          <div class="inline-stars" title="Cliquer pour changer le niveau" style="margin-top:4px">
             ${[1,2,3,4,5].map(n => `
               <span class="istar ${n <= nbOn ? 'on' : 'off'}"
                 style="${n <= nbOn ? `color:${col}` : ''}"
@@ -911,6 +985,31 @@ function updateStats() {
     renderSepCombos();
   }
 }
+
+window.toggleOpt = async (id, opt, checked) => {
+  const e = elevesOf(currentClassId)[id]; if (!e) return;
+  const opts = Array.isArray(e.opts) ? [...e.opts] : [];
+  const idx = opts.indexOf(opt);
+  if (checked && idx === -1) opts.push(opt);
+  if (!checked && idx !== -1) opts.splice(idx, 1);
+  await update(ref(db, `users/${uid}/classes/${currentClassId}/eleves/${id}`), { opts });
+};
+
+window._optFilter = '';
+window.toggleOptFilter = (val) => {
+  window._optFilter = val;
+  const pairs = [['fopt-all',''],['fopt-lca','lca'],['fopt-lce','lce'],['fopt-all2','all'],['fopt-esp','esp'],['fopt-noopt','aucune']];
+  const actCls = {lca:'active-lca',lce:'active-lce',all:'active-all',esp:'active-esp',aucune:'active-lca'};
+  pairs.forEach(([id, key]) => {
+    const btn = G(id); if (!btn) return;
+    btn.className = 'opt-filter-btn';
+    if (key === val) {
+      if (val === '') btn.style.fontWeight = '700';
+      else { btn.classList.add(actCls[val] || 'active-lca'); btn.style.fontWeight = '700'; }
+    } else { btn.style.fontWeight = ''; }
+  });
+  renderEleves();
+};
 
 window.togAbs = async id => {
   const e = elevesOf(currentClassId)[id]; if (!e) return;
@@ -1435,7 +1534,7 @@ window.compose = async () => {
   const eqToSave = EQ.map((t, i) => ({
     id: t.id, genre: t.genre || null, color: teamColors[i] || null,
     joueurs: t.joueurs.map(p => ({
-      id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num
+      id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num, opts: p.opts || []
     }))
   }));
   const sportData = {
@@ -1481,7 +1580,10 @@ function renderEQ() {
       <button class="btn btn-sm btn-b" onclick="window.print()">🖨️ Imprimer</button>
     </div>`;
 
-  const rowJ = (j, teamIdx) => `
+  const OPT_LABELS_SHORT = { lca: 'LCA', lce: 'LCE', all: 'All', esp: 'Esp' };
+  const rowJ = (j, teamIdx) => {
+    const optBadges = (j.opts||[]).map(o=>`<span class="opt-badge ${o}">${OPT_LABELS_SHORT[o]||o}</span>`).join('');
+    return `
     <div class="pr"
       draggable="true"
       data-player-id="${j.id}"
@@ -1493,9 +1595,9 @@ function renderEQ() {
       ondragleave="dragLeavePlayer(event)"
       ondrop="dropOnPlayer(event)">
       <div class="pnum">${j.num}</div>
-      <div class="pname">${j.nom}</div>
+      <div class="pname" style="flex:1">${j.nom}${optBadges?`<div style="margin-top:2px">${optBadges}</div>`:''}</div>
       <span style="font-size:18px;font-weight:900;color:${j.sx==='G'?'var(--boy)':'var(--girl)'}">${j.sx==='G'?'♂\uFE0E':'♀\uFE0E'}</span>
-    </div>`;
+    </div>`; };
 
   const renderTeamCard = (team, numLabel, col, teamIdx) => {
     const avg = team.joueurs.length
@@ -1731,7 +1833,7 @@ window.changeTeamColor = (teamIdx, color) => {
   if (currentSport && uid && currentClassId) {
     const eqToSave = EQ.map((t, i) => ({
       id: t.id, genre: t.genre || null, color: teamColors[i] || null,
-      joueurs: t.joueurs.map(p => ({ id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num }))
+      joueurs: t.joueurs.map(p => ({ id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num, opts: p.opts || [] }))
     }));
     const sportData = { ...(savedSports[currentSport] || {}), data: eqToSave, savedAt: Date.now() };
     savedSports[currentSport] = sportData;
@@ -1866,7 +1968,7 @@ function movePlayer(playerId, fromTeamIdx, toTeamIdx, targetPlayerId, insertBefo
   if (currentSport && uid && currentClassId) {
     const eqToSave = EQ.map((t, i) => ({
       id: t.id, genre: t.genre || null, color: teamColors[i] || null,
-      joueurs: t.joueurs.map(p => ({ id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num }))
+      joueurs: t.joueurs.map(p => ({ id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num, opts: p.opts || [] }))
     }));
     const sportData = { ...(savedSports[currentSport] || {}), data: eqToSave, savedAt: Date.now() };
     savedSports[currentSport] = sportData;
@@ -2145,7 +2247,7 @@ function renderEvalContent() {
   }
 
   const grid   = evalGrids[currentGrid];
-  const eleves = curEleves().filter(e => !e.abs).sort((a,b) => { const sp=s=>{const p=s.trim().split(/\s+/);const f=p.filter(w=>w===w.toUpperCase()&&w.length>1).join(' ');const r=p.filter(w=>w!==w.toUpperCase()||w.length<=1).join(' ');return{family:f||s,first:r||''};};const na=sp(a.nom),nb=sp(b.nom);const c=na.family.localeCompare(nb.family,'fr',{sensitivity:'base'});return c!==0?c:na.first.localeCompare(nb.first,'fr',{sensitivity:'base'}); });
+  const eleves = curEleves().filter(e => !e.abs).sort((a,b) => a.nom.localeCompare(b.nom));
   const total  = grid.criteres.reduce((s, c) => s + c.max, 0);
 
   // ─ Bandeau info + actions ─
@@ -2239,7 +2341,7 @@ function renderEvalContent() {
 // ── Export Excel éval ──────────────────────────────
 window.exportEvalExcel = () => {
   const grid = evalGrids[currentGrid]; if (!grid) return;
-  const eleves = curEleves().filter(e => !e.abs).sort((a,b) => { const sp=s=>{const p=s.trim().split(/\s+/);const f=p.filter(w=>w===w.toUpperCase()&&w.length>1).join(' ');const r=p.filter(w=>w!==w.toUpperCase()||w.length<=1).join(' ');return{family:f||s,first:r||''};};const na=sp(a.nom),nb=sp(b.nom);const c=na.family.localeCompare(nb.family,'fr',{sensitivity:'base'});return c!==0?c:na.first.localeCompare(nb.first,'fr',{sensitivity:'base'}); });
+  const eleves = curEleves().filter(e => !e.abs).sort((a,b) => a.nom.localeCompare(b.nom));
   const clsNom = classes[currentClassId]?.nom || '';
 
   const doExport = () => {
