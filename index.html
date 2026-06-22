@@ -836,7 +836,20 @@ window.renderEleves = () => {
   const q  = (G('q').value || '').toLowerCase();
   const fs = G('fsx').value;
   let L = curEleves().filter(e => e.nom.toLowerCase().includes(q) && (!fs || e.sx === fs));
-  L.sort((a,b) => a.abs !== b.abs ? (a.abs ? 1 : -1) : a.nom.localeCompare(b.nom));
+  // Tri : présents avant absents, puis NOM de famille (mots en majuscules), puis prénom
+  const splitNom = str => {
+    const parts = str.trim().split(/\s+/);
+    const family = parts.filter(w => w === w.toUpperCase() && w.length > 1).join(' ');
+    const first  = parts.filter(w => w !== w.toUpperCase() || w.length <= 1).join(' ');
+    return { family: family || str, first: first || '' };
+  };
+  L.sort((a, b) => {
+    if (a.abs !== b.abs) return a.abs ? 1 : -1;
+    const na = splitNom(a.nom), nb = splitNom(b.nom);
+    const cmpFamily = na.family.localeCompare(nb.family, 'fr', { sensitivity: 'base' });
+    if (cmpFamily !== 0) return cmpFamily;
+    return na.first.localeCompare(nb.first, 'fr', { sensitivity: 'base' });
+  });
 
   // Couleur selon niveau : nv5=vert(fort), nv3=jaune, nv1=rouge(faible)
   const nvColor = ['','#ea4335','#ff7043','#fbbc04','#8bc34a','#43a047'];
@@ -2132,7 +2145,7 @@ function renderEvalContent() {
   }
 
   const grid   = evalGrids[currentGrid];
-  const eleves = curEleves().filter(e => !e.abs).sort((a,b) => a.nom.localeCompare(b.nom));
+  const eleves = curEleves().filter(e => !e.abs).sort((a,b) => { const sp=s=>{const p=s.trim().split(/\s+/);const f=p.filter(w=>w===w.toUpperCase()&&w.length>1).join(' ');const r=p.filter(w=>w!==w.toUpperCase()||w.length<=1).join(' ');return{family:f||s,first:r||''};};const na=sp(a.nom),nb=sp(b.nom);const c=na.family.localeCompare(nb.family,'fr',{sensitivity:'base'});return c!==0?c:na.first.localeCompare(nb.first,'fr',{sensitivity:'base'}); });
   const total  = grid.criteres.reduce((s, c) => s + c.max, 0);
 
   // ─ Bandeau info + actions ─
@@ -2226,7 +2239,7 @@ function renderEvalContent() {
 // ── Export Excel éval ──────────────────────────────
 window.exportEvalExcel = () => {
   const grid = evalGrids[currentGrid]; if (!grid) return;
-  const eleves = curEleves().filter(e => !e.abs).sort((a,b) => a.nom.localeCompare(b.nom));
+  const eleves = curEleves().filter(e => !e.abs).sort((a,b) => { const sp=s=>{const p=s.trim().split(/\s+/);const f=p.filter(w=>w===w.toUpperCase()&&w.length>1).join(' ');const r=p.filter(w=>w!==w.toUpperCase()||w.length<=1).join(' ');return{family:f||s,first:r||''};};const na=sp(a.nom),nb=sp(b.nom);const c=na.family.localeCompare(nb.family,'fr',{sensitivity:'base'});return c!==0?c:na.first.localeCompare(nb.first,'fr',{sensitivity:'base'}); });
   const clsNom = classes[currentClassId]?.nom || '';
 
   const doExport = () => {
