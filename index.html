@@ -594,6 +594,7 @@ const OPTS = [
 ];
 
 let activePopup = null;
+let _popupSaving = false;
 
 window.openOptPopup = (ev, id, optsJson) => {
   ev.stopPropagation();
@@ -610,43 +611,54 @@ window.openOptPopup = (ev, id, optsJson) => {
   title.textContent = 'Options (multi-sélection)';
   popup.appendChild(title);
 
-  const checkState = {...Object.fromEntries(OPTS.map(o=>[o.val, currentOpts.includes(o.val)]))};
+  // État local — source de vérité pour ce popup
+  const checkState = Object.fromEntries(OPTS.map(o => [o.val, currentOpts.includes(o.val)]));
 
   OPTS.forEach(o => {
     const btn = document.createElement('button');
-    const dot = `<span style="width:10px;height:10px;border-radius:50%;background:${o.color};display:inline-block;flex-shrink:0"></span>`;
-    const updateBtn = () => {
-      btn.innerHTML = dot + o.label + (checkState[o.val] ? ' ✓' : '');
-      btn.style.background = checkState[o.val] ? '#f0f4f9' : '';
-      btn.style.fontWeight = checkState[o.val] ? '800' : '600';
+    btn.type = 'button';
+
+    const render = () => {
+      const on = checkState[o.val];
+      btn.style.cssText = `background:${on?o.color+'22':'none'};border:none;text-align:left;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:${on?'800':'600'};display:flex;align-items:center;gap:8px;width:100%;transition:background .1s;color:var(--text)`;
+      btn.innerHTML = `<span style="width:12px;height:12px;border-radius:50%;background:${o.color};display:inline-block;flex-shrink:0;${on?'':'opacity:.35'}"></span>${o.label}<span style="margin-left:auto;font-size:15px">${on ? '✓' : ''}</span>`;
     };
-    updateBtn();
-    btn.onclick = async (e) => {
+    render();
+
+    btn.addEventListener('click', async (e) => {
       e.stopPropagation();
+      e.preventDefault();
       checkState[o.val] = !checkState[o.val];
-      updateBtn();
-      const newOpts = OPTS.map(x=>x.val).filter(v=>checkState[v]);
+      render();
+      const newOpts = OPTS.map(x => x.val).filter(v => checkState[v]);
+      // Mise à jour silencieuse : on suspend le re-render le temps du save
+      _popupSaving = true;
       await update(ref(db, `users/${uid}/classes5/${currentSrcId}/eleves/${id}`), { opts: newOpts });
-    };
+      _popupSaving = false;
+    });
+
     popup.appendChild(btn);
   });
 
   // Bouton fermer
   const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
   closeBtn.innerHTML = '✓ Fermer';
-  closeBtn.style.cssText = 'margin-top:4px;border-top:1px solid var(--border);width:100%;justify-content:center;color:var(--primary);font-weight:700';
-  closeBtn.onclick = e => { e.stopPropagation(); closeOptPopup(); };
+  closeBtn.style.cssText = 'margin-top:6px;border-top:1px solid var(--border);padding-top:10px;width:100%;text-align:center;background:none;border-left:none;border-right:none;border-bottom:none;cursor:pointer;color:var(--primary);font-weight:700;font-size:13px;font-family:inherit';
+  closeBtn.addEventListener('click', e => { e.stopPropagation(); closeOptPopup(); });
   popup.appendChild(closeBtn);
 
+  popup.addEventListener('click', e => e.stopPropagation());
+  popup.addEventListener('mousedown', e => e.stopPropagation());
+
   document.body.appendChild(popup);
-  popup.addEventListener('click', e => e.stopPropagation()); // empêche la fermeture au clic dans le popup
   activePopup = popup;
 
   const rect = ev.target.getBoundingClientRect();
   let top  = rect.bottom + 6;
   let left = rect.left;
   if (left + 190 > window.innerWidth - 8) left = window.innerWidth - 190 - 8;
-  if (top + 240 > window.innerHeight - 8) top = rect.top - 240 - 6;
+  if (top + 260 > window.innerHeight - 8) top = rect.top - 260 - 6;
   popup.style.top  = top  + 'px';
   popup.style.left = left + 'px';
 };
@@ -658,6 +670,7 @@ document.addEventListener('click', closeOptPopup);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOptPopup(); });
 
 window.renderEleves = () => {
+  if (_popupSaving) return; // ne pas détruire le popup pendant la sauvegarde
   if (!currentSrcId) {
     G('list').innerHTML = '<div class="empty"><div class="em">📋</div><p>Créez d\'abord une classe source.</p></div>';
     return;
