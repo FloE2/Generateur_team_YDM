@@ -3,51 +3,43 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EPS — Compositeur d'équipes</title>
+<title>YDM — Compositeur de classes 5ème</title>
 <style>
 :root{
   --primary:#1a73e8;--dark:#1557b0;--green:#34a853;--red:#ea4335;
   --yellow:#fbbc04;--bg:#f0f4f9;--card:#fff;--border:#dadce0;
   --text:#202124;--muted:#5f6368;--girl:#e91e63;--boy:#1565c0;
-  --absent:#fce8e6;--r:12px;--sh:0 2px 8px rgba(0,0,0,.12);
+  --r:12px;--sh:0 2px 8px rgba(0,0,0,.12);
+  --lca:#7b1fa2;--lce:#0097a7;--all:#e65100;--esp:#2e7d32;--aucune:#78909c;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
-#app{display:none;flex:1;display:flex;flex-direction:column}
-#app > .class-bar, #app > .tabs, #app > .content{flex-shrink:0}
-#app > .content{flex:1}
 
 /* LOGIN */
 #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1a73e8,#0d47a1)}
 .login-card{background:#fff;border-radius:20px;padding:48px 40px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.25);max-width:400px;width:90%}
-.login-card .logo{font-size:56px;margin-bottom:16px}
-.login-card h1{font-size:26px;font-weight:800;color:var(--text);margin-bottom:8px}
-.login-card p{color:var(--muted);font-size:15px;margin-bottom:32px;line-height:1.6}
-.btn-google{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:14px 24px;border:2px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;font-size:15px;font-weight:600;color:var(--text);transition:all .2s}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:14px 24px;border:2px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;font-size:15px;font-weight:600;color:var(--text);transition:all .2s;margin-top:24px}
 .btn-google:hover{background:var(--bg);border-color:var(--primary)}
 .btn-google img{width:22px}
 
 /* APP */
-#app{display:none}
+#app{display:none;flex:1;flex-direction:column}
 header{background:linear-gradient(135deg,#1a73e8,#0d47a1);color:#fff;padding:14px 24px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 10px rgba(0,0,0,.2)}
-header .logo{font-size:24px;flex-shrink:0}
 header h1{font-size:18px;font-weight:700;flex:1}
-.user-info{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.user-info{display:flex;align-items:center;gap:10px}
 .user-avatar{width:32px;height:32px;border-radius:50%;border:2px solid rgba(255,255,255,.4)}
-.user-name{font-size:13px;opacity:.9;display:none}
-@media(min-width:600px){.user-name{display:block}}
-.btn-logout{padding:6px 12px;border:1.5px solid rgba(255,255,255,.4);border-radius:8px;background:none;color:#fff;cursor:pointer;font-size:12px;font-weight:600;transition:all .2s}
+.btn-logout{padding:6px 12px;border:1.5px solid rgba(255,255,255,.4);border-radius:8px;background:none;color:#fff;cursor:pointer;font-size:12px;font-weight:600}
 .btn-logout:hover{background:rgba(255,255,255,.15)}
 
-/* CLASS BAR */
-.class-bar{background:#fff;border-bottom:2px solid var(--border);padding:8px 20px;display:flex;align-items:center;gap:8px;overflow-x:auto;min-height:50px}
-.class-chip{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap;transition:all .2s;display:inline-flex;align-items:center;gap:5px}
-.class-chip:hover{border-color:var(--primary);color:var(--primary)}
-.class-chip.active{background:var(--primary);color:#fff;border-color:var(--primary)}
-.del-cls{background:none;border:none;cursor:pointer;color:inherit;font-size:14px;padding:0 2px;opacity:.65;line-height:1}
-.del-cls:hover{opacity:1}
-.btn-add-class{padding:6px 14px;border-radius:20px;border:1.5px dashed var(--border);background:none;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap;transition:all .2s}
-.btn-add-class:hover{border-color:var(--green);color:var(--green)}
+/* SOURCE BAR */
+.source-bar{background:#fff;border-bottom:2px solid var(--border);padding:8px 20px;display:flex;align-items:center;gap:8px;overflow-x:auto;min-height:50px;flex-wrap:wrap}
+.src-chip{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap;transition:all .2s;display:inline-flex;align-items:center;gap:5px}
+.src-chip:hover{border-color:var(--primary);color:var(--primary)}
+.src-chip.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.del-src{background:none;border:none;cursor:pointer;color:inherit;font-size:14px;padding:0 2px;opacity:.65}
+.del-src:hover{opacity:1}
+.btn-add-src{padding:6px 14px;border-radius:20px;border:1.5px dashed var(--border);background:none;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap;transition:all .2s}
+.btn-add-src:hover{border-color:var(--green);color:var(--green)}
 
 /* TABS */
 .tabs{display:flex;background:#fff;border-bottom:2px solid var(--border);padding:0 20px;gap:4px;overflow-x:auto}
@@ -56,140 +48,122 @@ header h1{font-size:18px;font-weight:700;flex:1}
 .badge{background:var(--primary);color:#fff;border-radius:20px;font-size:11px;padding:2px 7px;font-weight:700}
 
 /* LAYOUT */
-.content{padding:20px;max-width:1200px;margin:0 auto}
+.content{padding:20px;max-width:1400px;margin:0 auto;width:100%}
 .panel{display:none}.panel.active{display:block}
-.card{background:var(--card);border-radius:var(--r);padding:20px;box-shadow:var(--sh);margin-bottom:20px}
-.ct{font-size:15px;font-weight:700;margin-bottom:16px}
+.card{background:var(--card);border-radius:var(--r);padding:20px;box-shadow:var(--sh);margin-bottom:16px}
+.ct{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
 .fg{display:flex;flex-direction:column;gap:5px}
 .fg label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
-input[type=text],select,input[type=number]{padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none;transition:border-color .2s;background:#fff}
+input[type=text],select,input[type=number]{padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none;transition:border-color .2s;background:#fff;font-family:inherit}
 input[type=text]:focus,select:focus,input[type=number]:focus{border-color:var(--primary)}
-input[type=text]{min-width:160px}
 .gt{display:flex;border:1.5px solid var(--border);border-radius:8px;overflow:hidden}
 .gt input{display:none}
 .gt label{padding:10px 14px;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;display:flex;align-items:center;gap:5px}
 .gt input[value=G]:checked+label{background:var(--boy);color:#fff}
 .gt input[value=F]:checked+label{background:var(--girl);color:#fff}
-.lsel{display:flex;flex-direction:row-reverse;gap:4px}
-.lsel input{display:none}
-.lsel label{cursor:pointer;font-size:24px;color:#dadce0;transition:color .15s;line-height:1}
-.lsel input:checked~label,.lsel label:hover,.lsel label:hover~label{color:var(--yellow)}
-.btn{padding:10px 18px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn{padding:10px 18px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s;display:inline-flex;align-items:center;gap:6px;font-family:inherit}
 .btn-b{background:var(--primary);color:#fff}.btn-b:hover{background:var(--dark)}
 .btn-g{background:var(--green);color:#fff}.btn-g:hover{background:#2d9248}
-.btn-r{background:var(--red);color:#fff}
+.btn-r{background:var(--red);color:#fff}.btn-r:hover{background:#c62828}
 .btn-sm{padding:6px 12px;font-size:12px}
+.btn-ghost{background:none;border:1.5px solid var(--border);color:var(--text)}.btn-ghost:hover{border-color:var(--primary);color:var(--primary)}
 .ico-btn{padding:6px 8px;background:none;border:none;cursor:pointer;border-radius:6px;font-size:16px;transition:background .2s}
 .ico-btn:hover{background:var(--bg)}
 
-/* STUDENTS */
+/* NIVEAU STARS */
+.lsel{display:flex;flex-direction:row-reverse;gap:4px}
+.lsel input{display:none}
+.lsel label{cursor:pointer;font-size:22px;color:#dadce0;transition:color .15s;line-height:1}
+.lsel input:checked~label,.lsel label:hover,.lsel label:hover~label{color:var(--yellow)}
+
+/* OPTIONS BADGES */
+.opt-badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;color:#fff;letter-spacing:.3px}
+.opt-LCA{background:var(--lca)}
+.opt-LCE{background:var(--lce)}
+.opt-ALL{background:var(--all)}
+.opt-ESP{background:var(--esp)}
+.opt-AUCUNE{background:var(--aucune)}
+
+/* STUDENT GRID */
 .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
-.sc{border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px;background:#fff}
-.sc.absent{background:var(--absent);border-color:#f5c6c2;opacity:.75}
-.sc.absent .sname{text-decoration:line-through;color:var(--muted)}
+.sc{border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px;background:#fff;transition:border-color .2s}
+.sc:hover{border-color:#aaa}
 .gab{width:33px;height:33px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;font-weight:700;color:#fff}
 .gab.G{background:var(--boy)}.gab.F{background:var(--girl)}
 .sinfo{flex:1;min-width:0}
-.sname{font-weight:600;font-size:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3;max-height:2.6em}
-.smeta{font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center;margin-top:2px;flex-wrap:wrap}
+.sname{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.smeta{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center;margin-top:3px;flex-wrap:wrap}
 .sact{display:flex;gap:2px;flex-shrink:0}
-.sbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
-.chip{background:var(--bg);border-radius:20px;padding:6px 14px;font-size:13px;display:flex;align-items:center;gap:6px;font-weight:600}
-.chip strong{color:var(--primary);font-size:15px}
-
-/* SETTINGS */
-.set-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px}
-.si{display:flex;flex-direction:column;gap:6px}
-.si label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase}
-.tog{display:flex;border:1.5px solid var(--border);border-radius:8px;overflow:hidden}
-.tog input{display:none}
-.tog label{flex:1;padding:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s}
-.tog input:checked+label{background:var(--primary);color:#fff}
-
-/* TEAMS */
-.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
-.tc{border-radius:12px;overflow:hidden;box-shadow:var(--sh)}
-.th{padding:12px 16px;color:#fff;font-weight:700;font-size:15px;display:flex;justify-content:space-between;align-items:center}
-.tbody{background:#fff}
-.pr{padding:10px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--bg)}
-.pr:last-child{border-bottom:none}
-.pr.sub{background:#fffde7}
-.pnum{width:27px;height:27px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--muted);flex-shrink:0}
-.pr.sub .pnum{background:#fff9c4;color:#f9a825;border:1.5px dashed #f9a825}
-.pname{flex:1;font-size:13px;font-weight:600}
-.sdiv{padding:5px 16px;background:#fff9c4;font-size:11px;font-weight:700;color:#f57f17;text-transform:uppercase;letter-spacing:1px}
-/* ── BADGES OPTIONS ── */
-.opt-badge{display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;margin:1px 2px 1px 0;letter-spacing:.3px}
-.opt-badge.lca{background:#ede7f6;color:#4527a0;border:1px solid #b39ddb}
-.opt-badge.lce{background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7}
-.opt-badge.all{background:#e3f2fd;color:#0d47a1;border:1px solid #90caf9}
-.opt-badge.esp{background:#fff3e0;color:#bf360c;border:1px solid #ffcc80}
-.opts-check-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
-.opts-check-row label{display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:3px 8px;border-radius:5px;border:1px solid var(--border);background:var(--bg)}
-.opts-check-row label:hover{border-color:var(--primary)}
-.opts-check-row input[type=checkbox]{cursor:pointer}
-/* filtre options dans onglet élèves */
-.opt-filter-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
-.opt-filter-btn{padding:4px 11px;font-size:12px;font-weight:600;border-radius:20px;border:1.5px solid var(--border);background:#fff;cursor:pointer;transition:all .15s}
-.opt-filter-btn.active-lca{background:#ede7f6;border-color:#7c4dff;color:#4527a0}
-.opt-filter-btn.active-lce{background:#e8f5e9;border-color:#43a047;color:#1b5e20}
-.opt-filter-btn.active-all{background:#e3f2fd;border-color:#1976d2;color:#0d47a1}
-.opt-filter-btn.active-esp{background:#fff3e0;border-color:#f4511e;color:#bf360c}
-
-/* ALERTS */
-.al{border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:14px;line-height:1.6}
-.al-i{background:#e8f0fe;border:1px solid #aecbfa;color:var(--primary)}
-.al-w{background:var(--absent);border:1px solid #f5c6c2;color:#c62828}
-
-/* DRAG & DROP */
-.pr[draggable]{cursor:grab;transition:opacity .15s,transform .15s}
-.pr[draggable]:active{cursor:grabbing}
-.pr.dragging{opacity:.35;transform:scale(.97)}
-.pr.insert-above{border-top:3px solid var(--primary)!important;margin-top:-1px}
-.pr.insert-below{border-bottom:3px solid var(--primary)!important;margin-bottom:-1px}
-.tbody.drop-target-empty{background:#f0f7ff;outline:2.5px dashed var(--primary);outline-offset:-4px;border-radius:0 0 12px 12px;min-height:40px;transition:background .15s}
-.eq-avg-badge{transition:all .3s}
-
-/* SEARCH */
 .sw{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
 .sb{position:relative;flex:1;min-width:180px}
 .sb input{width:100%;padding-left:36px}
 .sb::before{content:'🔍';position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none}
+.sbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.chip{background:var(--bg);border-radius:20px;padding:6px 14px;font-size:13px;display:flex;align-items:center;gap:6px;font-weight:600}
+.chip strong{color:var(--primary);font-size:15px}
 
-/* EMPTY / LOADING */
+/* NIVEAU INLINE */
+.niv-stars{display:flex;gap:2px;margin-top:4px;align-items:center}
+.istar{font-size:18px;cursor:pointer;line-height:1;transition:transform .1s}
+.istar.on{color:var(--yellow)}.istar.off{color:#dadce0}
+.istar:hover{transform:scale(1.25)}
+
+/* CLASSES OUTPUT */
+.classes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:900px){.classes-grid{grid-template-columns:1fr}}
+.cls-card{border-radius:14px;overflow:hidden;box-shadow:var(--sh);background:#fff}
+.cls-head{padding:14px 18px;color:#fff;font-weight:800;font-size:16px;display:flex;justify-content:space-between;align-items:center}
+.cls-stats{padding:10px 18px;background:#f8f9fa;border-bottom:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;font-size:12px;font-weight:600}
+.cls-stat{display:flex;align-items:center;gap:4px;color:var(--muted)}
+.cls-body{padding:10px 0;max-height:420px;overflow-y:auto}
+.cls-eleve{padding:8px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f0f4f9;cursor:grab;transition:background .15s}
+.cls-eleve:last-child{border-bottom:none}
+.cls-eleve:hover{background:#f0f4f9}
+.cls-eleve.dragging{opacity:.3}
+.cls-body.drag-over{background:#e8f0fe;outline:2px dashed var(--primary);outline-offset:-2px}
+.cls-eleve-name{font-size:13px;font-weight:600;flex:1}
+.cls-eleve-meta{font-size:11px;color:var(--muted);display:flex;gap:5px;align-items:center}
+
+/* MODE SELECTOR */
+.mode-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+@media(max-width:700px){.mode-grid{grid-template-columns:1fr}}
+.mode-card{border:2px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:all .2s;text-align:left}
+.mode-card:hover{border-color:var(--primary);background:#f8f9ff}
+.mode-card.selected{border-color:var(--primary);background:#e8f0fe}
+.mode-card h3{font-size:14px;font-weight:700;margin-bottom:6px}
+.mode-card p{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* ALERTS */
+.al{border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:14px;line-height:1.6}
+.al-i{background:#e8f0fe;border:1px solid #aecbfa;color:var(--primary)}
+.al-w{background:#fce8e6;border:1px solid #f5c6c2;color:#c62828}
+.al-g{background:#e8f5e9;border:1px solid #a5d6a7;color:#1b5e20}
+
+/* MODALS */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center}
+.mo.open{display:flex}
+.moc{background:#fff;border-radius:16px;padding:26px;min-width:300px;max-width:480px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto}
+.moc h3{font-size:17px;margin-bottom:18px;font-weight:700}
+
+/* OPT SELECTOR */
+.opt-sel{display:flex;gap:6px;flex-wrap:wrap}
+.opt-sel input{display:none}
+.opt-sel label{padding:7px 14px;border-radius:20px;border:1.5px solid var(--border);cursor:pointer;font-size:12px;font-weight:700;transition:all .2s}
+.opt-sel input[value=LCA]:checked+label{background:var(--lca);color:#fff;border-color:var(--lca)}
+.opt-sel input[value=LCE]:checked+label{background:var(--lce);color:#fff;border-color:var(--lce)}
+.opt-sel input[value=ALL]:checked+label{background:var(--all);color:#fff;border-color:var(--all)}
+.opt-sel input[value=ESP]:checked+label{background:var(--esp);color:#fff;border-color:var(--esp)}
+.opt-sel input[value=AUCUNE]:checked+label{background:var(--aucune);color:#fff;border-color:var(--aucune)}
+
+/* EMPTY */
 .empty{text-align:center;padding:40px 20px;color:var(--muted)}
 .empty .em{font-size:44px;margin-bottom:10px}
 .spinner{display:inline-block;width:20px;height:20px;border:2.5px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* NO CLASS */
-.no-class{text-align:center;padding:60px 20px;color:var(--muted)}
-.no-class .em{font-size:52px;margin-bottom:14px}
-.no-class h2{font-size:20px;font-weight:700;margin-bottom:8px;color:var(--text)}
-.no-class p{font-size:14px;margin-bottom:24px}
-
-/* MODALS */
-.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center}
-.mo.open{display:flex}
-.moc{background:#fff;border-radius:16px;padding:26px;min-width:300px;max-width:460px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2)}
-.moc h3{font-size:17px;margin-bottom:18px}
-.stab{width:100%;border-collapse:collapse;font-size:13px}
-.stab th{text-align:left;padding:8px 12px;background:var(--bg);font-weight:700;font-size:11px;text-transform:uppercase;color:var(--muted)}
-.stab td{padding:8px 12px;border-bottom:1px solid var(--border)}
-
-/* INLINE STARS */
-.inline-stars { display:flex; align-items:center; gap:2px; margin-top:5px; }
-.istar { font-size:22px; cursor:pointer; line-height:1; transition:transform .1s, color .1s; user-select:none; }
-.istar.on  { color:var(--yellow); }
-.istar.off { color:#dadce0; }
-.istar:hover { transform:scale(1.25); }
-
-@media(max-width:600px){.content{padding:12px}input[type=text]{min-width:unset;width:100%}}
-@media print{
-  .tabs,header,.class-bar,.btn,.sact,.sw,#add-card{display:none!important}
-  .panel.active{display:block!important}body{background:#fff}
-}
+@media(max-width:600px){.content{padding:12px}.classes-grid{grid-template-columns:1fr}}
+@media print{.tabs,header,.source-bar,.btn,.sact,.sw,#add-card{display:none!important}.panel.active{display:block!important}body{background:#fff}}
 </style>
 </head>
 <body>
@@ -197,9 +171,9 @@ input[type=text]{min-width:160px}
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-card">
-    <div class="logo" style="font-size:42px;font-weight:900;letter-spacing:-2px;background:linear-gradient(135deg,#1a73e8,#0d47a1);-webkit-background-clip:text;-webkit-text-fill-color:transparent">YDM</div>
-    <h1>EPS Équipes</h1>
-    <p>Compositeur d'équipes pour vos cours d'EPS.<br>Vos données sauvegardées sur tous vos appareils.</p>
+    <div style="font-size:42px;font-weight:900;letter-spacing:-2px;background:linear-gradient(135deg,#1a73e8,#0d47a1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px">YDM</div>
+    <h1 style="font-size:22px;font-weight:800;margin-bottom:8px">Compositeur de classes</h1>
+    <p style="color:var(--muted);font-size:14px;line-height:1.6">Composez vos classes de 5ème en tenant compte des options (LCA, LCE, Allemand, Espagnol), du sexe et du niveau scolaire.</p>
     <button class="btn-google" onclick="loginGoogle()">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
       Continuer avec Google
@@ -210,401 +184,212 @@ input[type=text]{min-width:160px}
 <!-- APP -->
 <div id="app">
   <header>
-    <div class="logo" style="font-size:20px;font-weight:900;letter-spacing:-1px;color:#fff;opacity:.95">YDM</div>
-    <h1>EPS — Compositeur d'équipes</h1>
+    <div style="font-size:20px;font-weight:900;letter-spacing:-1px;color:#fff;opacity:.95;margin-right:4px">YDM</div>
+    <h1>Compositeur de classes — 5ème 26-27</h1>
     <div class="user-info">
       <img class="user-avatar" id="user-avatar" src="" alt="">
-      <span class="user-name" id="user-name"></span>
       <button class="btn-logout" onclick="logout()">⏻ Déconnexion</button>
     </div>
   </header>
 
-  <!-- Barre de classes -->
-  <div class="class-bar" id="class-bar">
+  <!-- Barre des classes sources (actuelles 4ème) -->
+  <div class="source-bar" id="source-bar">
     <span class="spinner"></span> Chargement…
   </div>
 
-  <!-- Tabs (cachés si pas de classe) -->
+  <!-- Tabs -->
   <div class="tabs" id="tabs" style="display:none">
     <button class="tb active" onclick="showTab('eleves')" id="tab-eleves">👥 Élèves <span class="badge" id="b-el">0</span></button>
-    <button class="tb" onclick="showTab('params')" id="tab-params">⚙️ Paramètres</button>
-    <button class="tb" onclick="showTab('equipes')" id="tab-equipes">🏆 Équipes <span class="badge" id="b-eq">0</span></button>
-    <button class="tb" onclick="showTab('eval')" id="tab-eval">🔒 Évaluation</button>
+    <button class="tb" onclick="showTab('composer')" id="tab-composer">⚙️ Composer</button>
+    <button class="tb" onclick="showTab('classes')" id="tab-classes">🏫 Classes <span class="badge" id="b-cls">3</span></button>
   </div>
 
   <div class="content">
 
-    <!-- Vue sans classe -->
-    <div id="no-class-view" style="display:none">
-      <div class="no-class">
-        <div class="em">📚</div>
-        <h2>Commencez par créer une classe</h2>
-        <p>Les élèves sont toujours rattachés à une classe.<br>Créez d'abord votre classe, puis ajoutez vos élèves.</p>
-        <div style="display:flex;flex-direction:column;gap:12px;align-items:center;max-width:320px;margin:0 auto">
-          <div style="display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:12px;padding:14px 20px;width:100%">
-            <span style="font-size:28px">1️⃣</span>
-            <div style="text-align:left">
-              <div style="font-weight:700;font-size:14px;color:var(--text)">Créer une classe</div>
-              <div style="font-size:12px;color:var(--muted)">Ex : 6ème A, 5ème B…</div>
+    <!-- ═══ ONGLET ÉLÈVES ═══ -->
+    <div class="panel active" id="panel-eleves">
+
+      <!-- Ajouter un élève -->
+      <div class="card" id="add-card">
+        <div class="ct">➕ Ajouter un élève</div>
+        <div class="row">
+          <div class="fg" style="flex:1;min-width:180px">
+            <label>Prénom / Nom</label>
+            <input type="text" id="inp" placeholder="Ex : Marie DUPONT" onkeydown="if(event.key==='Enter')addEleve()">
+          </div>
+          <div class="fg">
+            <label>Sexe</label>
+            <div class="gt">
+              <input type="radio" name="sx" id="sg" value="G" checked><label for="sg">♂ Garçon</label>
+              <input type="radio" name="sx" id="sf" value="F"><label for="sf">♀ Fille</label>
             </div>
           </div>
-          <div style="display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:12px;padding:14px 20px;width:100%;opacity:.5">
-            <span style="font-size:28px">2️⃣</span>
-            <div style="text-align:left">
-              <div style="font-weight:700;font-size:14px;color:var(--text)">Ajouter les élèves</div>
-              <div style="font-size:12px;color:var(--muted)">Nom, sexe, niveau…</div>
+          <div class="fg">
+            <label>Option LV2 / Latin</label>
+            <div class="opt-sel">
+              <input type="radio" name="opt" id="o-lca" value="LCA"><label for="o-lca">LCA Latin</label>
+              <input type="radio" name="opt" id="o-lce" value="LCE"><label for="o-lce">LCE Grec</label>
+              <input type="radio" name="opt" id="o-all" value="ALL"><label for="o-all">Allemand</label>
+              <input type="radio" name="opt" id="o-esp" value="ESP"><label for="o-esp">Espagnol</label>
+              <input type="radio" name="opt" id="o-auc" value="AUCUNE" checked><label for="o-auc">Aucune</label>
             </div>
           </div>
-          <div style="display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:12px;padding:14px 20px;width:100%;opacity:.5">
-            <span style="font-size:28px">3️⃣</span>
-            <div style="text-align:left">
-              <div style="font-weight:700;font-size:14px;color:var(--text)">Composer les équipes</div>
-              <div style="font-size:12px;color:var(--muted)">Équilibrées automatiquement</div>
+          <div class="fg">
+            <label>Niveau scolaire (5=meilleur)</label>
+            <div class="lsel">
+              <input type="radio" name="nv" id="l5" value="5"><label for="l5" title="Excellent">★</label>
+              <input type="radio" name="nv" id="l4" value="4"><label for="l4" title="Bien">★</label>
+              <input type="radio" name="nv" id="l3" value="3" checked><label for="l3" title="Moyen">★</label>
+              <input type="radio" name="nv" id="l2" value="2"><label for="l2" title="En difficulté">★</label>
+              <input type="radio" name="nv" id="l1" value="1"><label for="l1" title="Grandes difficultés">★</label>
             </div>
           </div>
-          <button class="btn btn-b" style="margin-top:8px;width:100%;justify-content:center" onclick="addClassPrompt()">📚 Créer ma première classe</button>
+          <div class="fg"><label>&nbsp;</label>
+            <button class="btn btn-b" onclick="addEleve()">➕ Ajouter</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="sbar" id="sbar"></div>
+
+      <!-- Filtres -->
+      <div class="sw">
+        <div class="sb"><input type="text" id="q" placeholder="Rechercher…" oninput="renderEleves()"></div>
+        <select id="fsx" onchange="renderEleves()" style="padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px">
+          <option value="">Tous sexes</option>
+          <option value="G">♂ Garçons</option>
+          <option value="F">♀ Filles</option>
+        </select>
+        <select id="fopt" onchange="renderEleves()" style="padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px">
+          <option value="">Toutes options</option>
+          <option value="LCA">LCA Latin</option>
+          <option value="LCE">LCE Grec</option>
+          <option value="ALL">Allemand</option>
+          <option value="ESP">Espagnol</option>
+          <option value="AUCUNE">Aucune option</option>
+        </select>
+      </div>
+
+      <div class="sgrid" id="list"></div>
+    </div>
+
+    <!-- ═══ ONGLET COMPOSER ═══ -->
+    <div class="panel" id="panel-composer">
+      <div class="card">
+        <div class="ct">⚙️ Configuration</div>
+
+        <div class="fg" style="margin-bottom:16px;max-width:200px">
+          <label>Nombre de classes à créer</label>
+          <input type="number" id="nb-classes" value="3" min="2" max="6" style="width:120px" oninput="updateComposerPreview()">
+        </div>
+
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Mode de répartition</div>
+        <div class="mode-grid">
+          <div class="mode-card selected" id="mode-equilibre" onclick="selectMode('equilibre')">
+            <h3>⚖️ Équilibrée</h3>
+            <p>Chaque classe a un mix équilibré d'options, de filles/garçons et de niveaux. Idéal pour des classes homogènes.</p>
+          </div>
+          <div class="mode-card" id="mode-options" onclick="selectMode('options')">
+            <h3>📚 Par options</h3>
+            <p>Les élèves de même option sont regroupés ensemble autant que possible. LCA dans 1 classe, Allemand dans 1 autre…</p>
+          </div>
+          <div class="mode-card" id="mode-hybride" onclick="selectMode('hybride')">
+            <h3>🔀 Hybride</h3>
+            <p>Respecte les groupes d'options tout en équilibrant filles/garçons et niveaux entre les classes.</p>
+          </div>
+        </div>
+
+        <div id="composer-preview" style="margin-top:8px"></div>
+
+        <button class="btn btn-g" style="width:100%;justify-content:center;font-size:15px;padding:14px;margin-top:8px" onclick="composer()">
+          🏫 Composer les classes
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="ct">📖 Logique de composition</div>
+        <div class="al al-i">
+          <strong>3 modes disponibles :</strong><br><br>
+          ⚖️ <strong>Équilibrée</strong> — Distribution en serpentin par niveau. Chaque classe reçoit autant de filles/garçons et d'élèves de chaque option. Idéal pour des classes vraiment homogènes.<br><br>
+          📚 <strong>Par options</strong> — Les élèves LCA sont mis ensemble, les Allemand ensemble, etc. Utile si les créneaux horaires des options imposent des regroupements.<br><br>
+          🔀 <strong>Hybride</strong> — On répartit d'abord les contraintes fortes (LCA souvent imposée), puis on équilibre le reste sur filles/garçons et niveau. Le meilleur des deux mondes dans la plupart des cas.
         </div>
       </div>
     </div>
 
-    <!-- Panels -->
-    <div id="panels" style="display:none">
-
-      <!-- ÉLÈVES -->
-      <div class="panel active" id="panel-eleves">
-        <div class="card" id="add-card">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
-            <div class="ct" id="add-card-title" style="margin:0">➕ Ajouter un élève</div>
-            <button class="btn btn-sm" style="background:#e8f0fe;color:var(--primary);border:1.5px solid #aecbfa" onclick="openImport()">
-              📥 Importer CSV / Excel
-            </button>
-          </div>
-          <div class="row">
-            <div class="fg">
-              <label>Prénom / Nom</label>
-              <input type="text" id="inp" placeholder="Ex : Marie Dupont" onkeydown="if(event.key==='Enter')addEleve()">
-            </div>
-            <div class="fg">
-              <label>Sexe</label>
-              <div class="gt">
-                <input type="radio" name="sx" id="sg" value="G" checked><label for="sg">♂ Garçon</label>
-                <input type="radio" name="sx" id="sf" value="F"><label for="sf">♀ Fille</label>
-              </div>
-            </div>
-            <div class="fg">
-              <label>Niveau (5 = meilleur)</label>
-              <div class="lsel">
-                <input type="radio" name="nv" id="l5" value="5"><label for="l5" title="Expert / Très fort">★</label>
-                <input type="radio" name="nv" id="l4" value="4"><label for="l4" title="Fort">★</label>
-                <input type="radio" name="nv" id="l3" value="3" checked><label for="l3" title="Moyen">★</label>
-                <input type="radio" name="nv" id="l2" value="2"><label for="l2" title="Faible">★</label>
-                <input type="radio" name="nv" id="l1" value="1"><label for="l1" title="Débutant">★</label>
-              </div>
-            </div>
-            <div class="fg"><label>&nbsp;</label>
-              <button class="btn btn-b" onclick="addEleve()">➕ Ajouter</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="sbar" id="sbar"></div>
-
-        <div class="sw">
-          <div class="sb"><input type="text" id="q" placeholder="Rechercher…" oninput="renderEleves()"></div>
-          <select id="fsx" onchange="renderEleves()" style="padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px">
-            <option value="">Tous</option><option value="G">♂ Garçons</option><option value="F">♀ Filles</option>
-          </select>
-          <button class="btn btn-sm" style="background:#e8f5e9;color:#2e7d32" onclick="allPresent()">✅ Tous présents</button>
-          <button class="btn btn-sm" style="background:var(--absent);color:var(--red)" onclick="allAbsent()">😴 Tous absents</button>
-        </div>
-        <div class="opt-filter-row">
-          <span style="font-size:12px;color:var(--muted);font-weight:600">Filtrer par option :</span>
-          <button class="opt-filter-btn" id="fopt-all" onclick="toggleOptFilter('')">Tous</button>
-          <button class="opt-filter-btn" id="fopt-lca" onclick="toggleOptFilter('lca')">LCA Latin</button>
-          <button class="opt-filter-btn" id="fopt-lce" onclick="toggleOptFilter('lce')">LCE</button>
-          <button class="opt-filter-btn" id="fopt-all2" onclick="toggleOptFilter('all')">Allemand</button>
-          <button class="opt-filter-btn" id="fopt-esp" onclick="toggleOptFilter('esp')">Espagnol</button>
-          <button class="opt-filter-btn" id="fopt-noopt" onclick="toggleOptFilter('aucune')">Sans option</button>
-        </div>
-
-        <div class="sgrid" id="list"></div>
+    <!-- ═══ ONGLET CLASSES ═══ -->
+    <div class="panel" id="panel-classes">
+      <div id="classes-empty" class="empty">
+        <div class="em">🏫</div>
+        <p>Aucune classe composée.<br>Allez dans <strong>⚙️ Composer</strong> et cliquez sur "Composer les classes".</p>
       </div>
-
-      <!-- PARAMÈTRES -->
-      <div class="panel" id="panel-params">
-        <div class="card">
-          <div class="ct">⚙️ Configuration des équipes</div>
-
-          <!-- Ligne principale de contrôles -->
-          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
-            <!-- Mixité -->
-            <div class="si"><label>Mixité</label>
-              <div class="tog">
-                <input type="radio" name="mix" id="mm" value="mixte" checked onchange="onMixChange()"><label for="mm">Mixte</label>
-                <input type="radio" name="mix" id="ms" value="sep" onchange="onMixChange()"><label for="ms">Séparé</label>
-              </div>
-            </div>
-            <!-- Répartition -->
-            <div class="si" style="min-width:280px"><label>Répartition</label>
-              <div class="tog">
-                <input type="radio" name="eq" id="en" value="oui" checked onchange="preview()"><label for="en" title="Chaque équipe a un mélange de tous les niveaux">⚖️ Équilibrées</label>
-                <input type="radio" name="eq" id="es" value="similaire" onchange="preview()"><label for="es" title="Les élèves de même niveau sont regroupés ensemble">★ Similaires</label>
-                <input type="radio" name="eq" id="ea" value="non" onchange="preview()"><label for="ea" title="Répartition aléatoire">🎲 Aléatoire</label>
-              </div>
-            </div>
-            <!-- Champs mixte uniquement -->
-            <div id="si-neq" class="si"><label>Nombre d'équipes</label>
-              <input type="number" id="neq" value="2" min="2" max="12" style="width:110px" oninput="preview()">
-            </div>
-            <div id="si-njoueurs" class="si"><label>Joueurs par équipe</label>
-              <input type="number" id="njoueurs" value="5" min="1" max="20" style="width:110px" oninput="preview()">
-            </div>
-          </div>
-
-          <!-- Créateur d'APSA libre -->
-          <div style="margin-top:18px;padding-top:16px;border-top:1.5px solid var(--border)">
-            <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">
-              🏅 APSA — Nommez votre activité
-            </div>
-            <!-- Créer une nouvelle APSA -->
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
-              <input type="text" id="apsa-input" placeholder="Ex : Balle aux prisonniers, Tchoukball…"
-                style="flex:1;min-width:200px;max-width:360px"
-                onkeydown="if(event.key==='Enter')addApsa()"
-                oninput="updateApsaAddBtn()">
-              <button id="apsa-add-btn" class="btn btn-b btn-sm" onclick="addApsa()" style="opacity:.5;cursor:default" disabled>
-                ➕ Créer
-              </button>
-            </div>
-            <!-- APSAs existantes (créées ou avec équipes) -->
-            <div id="apsa-chips" style="display:flex;flex-wrap:wrap;gap:7px"></div>
-          </div>
-
-          <!-- MODE MIXTE : bouton Composer -->
-          <div id="compose-mixte-btn" style="margin-top:16px">
-            <button class="btn btn-g" style="width:100%;justify-content:center;font-size:15px;padding:12px 16px" onclick="compose()">🎲 Composer les équipes</button>
-          </div>
-
-          <!-- MODE SÉPARÉ : deux colonnes indépendantes -->
-          <div id="sep-panel" style="display:none;margin-top:18px;padding-top:18px;border-top:1.5px solid var(--border)">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-
-              <!-- COLONNE GARÇONS -->
-              <div>
-                <div style="font-weight:800;font-size:14px;color:var(--boy);margin-bottom:10px;display:flex;align-items:center;gap:7px">
-                  ♂ Équipes Garçons
-                  <span id="sel-boys-badge" style="display:none;background:var(--boy);color:#fff;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700"></span>
-                </div>
-                <div id="boys-options" style="display:flex;flex-direction:column;gap:6px"></div>
-              </div>
-
-              <!-- COLONNE FILLES -->
-              <div>
-                <div style="font-weight:800;font-size:14px;color:var(--girl);margin-bottom:10px;display:flex;align-items:center;gap:7px">
-                  ♀ Équipes Filles
-                  <span id="sel-girls-badge" style="display:none;background:var(--girl);color:#fff;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700"></span>
-                </div>
-                <div id="girls-options" style="display:flex;flex-direction:column;gap:6px"></div>
-              </div>
-
-            </div>
-
-            <!-- Aperçu + Composer en bas -->
-            <div id="sep-compose-wrap" style="display:none;margin-top:18px;padding-top:14px;border-top:1.5px solid var(--border)">
-              <div id="prev-sep" style="margin-bottom:12px"></div>
-              <button class="btn btn-g" style="width:100%;justify-content:center;font-size:15px;padding:12px 16px" onclick="compose()">🎲 Composer les équipes</button>
-            </div>
-            <div id="sep-hint" style="margin-top:14px;font-size:13px;color:var(--muted);text-align:center">
-              👆 Choisissez un nombre d'équipes pour les garçons <em>et</em> pour les filles
-            </div>
-          </div>
-        </div>
-
-        <div class="card" id="opt-stats-card">
-          <div class="ct">🎓 Répartition des options (classe active)</div>
-          <div id="opt-stats-content" style="display:flex;gap:10px;flex-wrap:wrap"></div>
-        </div>
-
-        <div class="card">
-          <div class="ct">📖 Logique de composition</div>
-          <div class="al al-i">
-            <strong>3 modes de composition disponibles :</strong><br><br>
-            ⚖️ <strong>Équilibrées</strong> — Distribution en serpentin : chaque équipe a un mélange de tous les niveaux. Idéal pour des matchs équilibrés.<br><br>
-            ★ <strong>Similaires</strong> — Les élèves du même niveau sont regroupés ensemble (les meilleurs avec les meilleurs, les débutants avec les débutants). Idéal pour un travail différencié.<br><br>
-            🎲 <strong>Aléatoire</strong> — Répartition aléatoire sans critère de niveau.<br><br>
-            ▶ En mode <strong>Séparé</strong>, choisissez indépendamment le nombre d'équipes garçons et filles. Les tailles s'ajustent automatiquement (±1 joueur).
-          </div>
-        </div>
-
-        <div id="prev"></div>
+      <div id="classes-actions" style="display:none;margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-b btn-sm" onclick="recomposer()">🔄 Recomposer</button>
+        <button class="btn btn-ghost btn-sm" onclick="exporterExcel()">📥 Exporter Excel</button>
+        <button class="btn btn-ghost btn-sm" onclick="window.print()">🖨️ Imprimer</button>
       </div>
-
-      <!-- ÉQUIPES -->
-      <div class="panel" id="panel-equipes">
-        <!-- Barre des sports sauvegardés -->
-        <div id="sport-tabs-bar" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;display:none"></div>
-        <div id="eqcontent">
-          <div class="empty"><div class="em">⚽</div><p>Aucune équipe composée.<br>Allez dans <strong>Paramètres</strong> et cliquez sur "Composer les équipes".</p></div>
-        </div>
-      </div>
-
-      <!-- ÉVALUATION -->
-      <div class="panel" id="panel-eval">
-
-        <!-- Sélecteur de grille -->
-        <div class="card" id="eval-apsa-card">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-            <div class="ct" style="margin:0">📝 Grilles d'évaluation</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap" id="eval-grid-tabs"></div>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <input type="text" id="eval-grid-input" placeholder="Nom de la grille (ex : Football, Balle aux prisonniers…)"
-              style="flex:1;min-width:200px;max-width:380px"
-              onkeydown="if(event.key==='Enter')addEvalGrid()"
-              oninput="updateEvalAddBtn()">
-            <button id="eval-grid-add-btn" class="btn btn-b btn-sm" onclick="addEvalGrid()" style="opacity:.5;cursor:default" disabled>
-              ➕ Nouvelle grille
-            </button>
-          </div>
-        </div>
-
-        <div id="eval-content">
-          <div class="empty"><div class="em">📝</div><p>Créez une grille d'évaluation ci-dessus<br>pour commencer à noter vos élèves.</p></div>
-        </div>
-      </div>
-
+      <div id="classes-container" class="classes-grid" style="display:none"></div>
     </div>
-  </div>
-</div>
 
-<!-- MODAL ÉVALUATION : ajouter/modifier un critère -->
-<div class="mo" id="modal-critere" onclick="if(event.target===this)closeCritereModal()">
-  <div class="moc" style="max-width:400px">
-    <h3 id="modal-critere-title">➕ Ajouter un critère</h3>
-    <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:20px">
-      <div class="fg">
-        <label>Nom du critère</label>
-        <input type="text" id="critere-nom" placeholder="Ex : Passe, Tir, Technique, Règles…" style="width:100%"
-          onkeydown="if(event.key==='Enter')saveCritere()">
+  </div><!-- .content -->
+</div><!-- #app -->
+
+<!-- MODAL ÉDITION ÉLÈVE -->
+<div class="mo" id="mo-edit">
+  <div class="moc">
+    <h3>✏️ Modifier l'élève</h3>
+    <div class="fg" style="margin-bottom:12px">
+      <label>Prénom / Nom</label>
+      <input type="text" id="en2" style="width:100%">
+    </div>
+    <div class="fg" style="margin-bottom:12px">
+      <label>Sexe</label>
+      <div class="gt">
+        <input type="radio" name="esx" id="esg" value="G"><label for="esg">♂ Garçon</label>
+        <input type="radio" name="esx" id="esf" value="F"><label for="esf">♀ Fille</label>
       </div>
-      <div class="fg">
-        <label>Note maximale (points)</label>
-        <input type="number" id="critere-max" value="5" min="1" max="100" style="width:120px">
+    </div>
+    <div class="fg" style="margin-bottom:12px">
+      <label>Option</label>
+      <div class="opt-sel">
+        <input type="radio" name="eopt" id="eo-lca" value="LCA"><label for="eo-lca">LCA Latin</label>
+        <input type="radio" name="eopt" id="eo-lce" value="LCE"><label for="eo-lce">LCE Grec</label>
+        <input type="radio" name="eopt" id="eo-all" value="ALL"><label for="eo-all">Allemand</label>
+        <input type="radio" name="eopt" id="eo-esp" value="ESP"><label for="eo-esp">Espagnol</label>
+        <input type="radio" name="eopt" id="eo-auc" value="AUCUNE"><label for="eo-auc">Aucune</label>
+      </div>
+    </div>
+    <div class="fg" style="margin-bottom:18px">
+      <label>Niveau scolaire (5=meilleur)</label>
+      <div class="lsel">
+        <input type="radio" name="env" id="el5" value="5"><label for="el5">★</label>
+        <input type="radio" name="env" id="el4" value="4"><label for="el4">★</label>
+        <input type="radio" name="env" id="el3" value="3"><label for="el3">★</label>
+        <input type="radio" name="env" id="el2" value="2"><label for="el2">★</label>
+        <input type="radio" name="env" id="el1" value="1"><label for="el1">★</label>
       </div>
     </div>
     <div style="display:flex;gap:10px;justify-content:flex-end">
-      <button class="btn" style="background:var(--bg);color:var(--text)" onclick="closeCritereModal()">Annuler</button>
-      <button class="btn btn-b" onclick="saveCritere()">💾 Enregistrer</button>
-    </div>
-  </div>
-</div>
-<div class="mo" id="modal" onclick="if(event.target===this)closeM()">
-  <div class="moc">
-    <h3>✏️ Modifier l'élève</h3>
-    <div style="display:flex;flex-direction:column;gap:14px">
-      <div class="fg"><label>Prénom / Nom</label><input type="text" id="en2" style="width:100%"></div>
-      <div class="fg"><label>Sexe</label>
-        <div class="gt">
-          <input type="radio" name="esx" id="esg" value="G"><label for="esg">♂ Garçon</label>
-          <input type="radio" name="esx" id="esf" value="F"><label for="esf">♀ Fille</label>
-        </div>
-      </div>
-      <div class="fg"><label>Niveau (5 = meilleur)</label>
-        <div class="lsel">
-          <input type="radio" name="env" id="e5" value="5"><label for="e5" title="Expert / Très fort">★</label>
-          <input type="radio" name="env" id="e4" value="4"><label for="e4" title="Fort">★</label>
-          <input type="radio" name="env" id="e3" value="3"><label for="e3" title="Moyen">★</label>
-          <input type="radio" name="env" id="e2" value="2"><label for="e2" title="Faible">★</label>
-          <input type="radio" name="env" id="e1" value="1"><label for="e1" title="Débutant">★</label>
-        </div>
-      </div>
-    </div>
-    <div style="display:flex;gap:10px;margin-top:22px;justify-content:flex-end">
-      <button class="btn" style="background:var(--bg);color:var(--text)" onclick="closeM()">Annuler</button>
+      <button class="btn btn-ghost" onclick="closeMo('mo-edit')">Annuler</button>
       <button class="btn btn-b" onclick="saveEdit()">💾 Enregistrer</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL NOUVELLE CLASSE -->
-<div class="mo" id="modal-class" onclick="if(event.target===this)closeClassModal()">
+<!-- MODAL DÉPLACER ÉLÈVE -->
+<div class="mo" id="mo-move">
   <div class="moc">
-    <h3>📚 Nouvelle classe</h3>
-    <div class="fg" style="margin-bottom:20px">
-      <label>Nom de la classe</label>
-      <input type="text" id="class-inp" placeholder="Ex : 6ème A, 5ème B, Terminale…" style="width:100%" onkeydown="if(event.key==='Enter')saveClass()">
-    </div>
-    <div style="display:flex;gap:10px;justify-content:flex-end">
-      <button class="btn" style="background:var(--bg);color:var(--text)" onclick="closeClassModal()">Annuler</button>
-      <button class="btn btn-b" onclick="saveClass()">➕ Créer</button>
+    <h3>↔️ Déplacer l'élève</h3>
+    <p id="move-eleve-name" style="font-weight:700;font-size:16px;margin-bottom:16px;color:var(--primary)"></p>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Choisissez la classe de destination :</p>
+    <div id="move-options" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div style="margin-top:16px;text-align:right">
+      <button class="btn btn-ghost" onclick="closeMo('mo-move')">Annuler</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL IMPORT CSV/EXCEL -->
-<div class="mo" id="modal-import" onclick="if(event.target===this)closeImport()">
-  <div class="moc" style="max-width:580px;display:flex;flex-direction:column;max-height:90vh;padding:0;overflow:hidden">
-    
-    <!-- En-tête fixe -->
-    <div style="padding:24px 26px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
-      <h3 style="margin-bottom:14px">📥 Importer des élèves</h3>
-      <div class="al al-i" style="margin:0;font-size:13px">
-        <div>
-          <strong>Format de votre export (3 colonnes, séparateur tabulation) :</strong><br><br>
-          <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px">
-            <tr style="background:#fff;border-radius:6px">
-              <th style="padding:5px 10px;text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">NOM</th>
-              <th style="padding:5px 10px;text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">Prénom</th>
-              <th style="padding:5px 10px;text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">Sexe</th>
-            </tr>
-            <tr>
-              <td style="padding:5px 10px">DUPONT</td><td style="padding:5px 10px">Marie</td><td style="padding:5px 10px">Féminin</td>
-            </tr>
-            <tr>
-              <td style="padding:5px 10px">MARTIN</td><td style="padding:5px 10px">Lucas</td><td style="padding:5px 10px">Masculin</td>
-            </tr>
-          </table>
-          ✅ En-tête ignorée · Masculin/Féminin, G/F, M/H acceptés · Niveau à définir dans l'appli
-        </div>
-      </div>
-    </div>
-
-    <!-- Corps scrollable -->
-    <div style="overflow-y:auto;flex:1;padding:16px 26px">
-
-      <!-- Zone de dépôt -->
-      <div id="drop-zone" style="border:2.5px dashed var(--border);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px"
-        onclick="G('file-inp').click()"
-        ondragover="event.preventDefault();this.style.borderColor='var(--primary)';this.style.background='#e8f0fe'"
-        ondragleave="this.style.borderColor='var(--border)';this.style.background=''"
-        ondrop="handleDrop(event)">
-        <div style="font-size:32px;margin-bottom:6px">📂</div>
-        <div style="font-weight:600;color:var(--text);margin-bottom:4px">Glisser-déposer un fichier ici</div>
-        <div style="font-size:13px;color:var(--muted)">ou cliquer pour sélectionner · CSV ou XLSX</div>
-      </div>
-      <input type="file" id="file-inp" accept=".csv,.xlsx,.xls,.txt" style="display:none" onchange="handleFile(this.files[0])">
-
-      <!-- Aperçu -->
-      <div id="import-preview" style="display:none">
-        <div style="font-weight:700;font-size:13px;margin-bottom:8px" id="import-preview-title"></div>
-        <div style="max-height:240px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px">
-          <table style="width:100%;border-collapse:collapse;font-size:13px" id="import-table"></table>
-        </div>
-        <div id="import-errors" style="margin-top:8px;font-size:12px;color:var(--red)"></div>
-      </div>
-
-    </div>
-
-    <!-- Pied fixe avec boutons -->
-    <div style="padding:14px 26px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;flex-shrink:0;background:#fff">
-      <button class="btn" style="background:var(--bg);color:var(--text)" onclick="closeImport()">Annuler</button>
-      <button class="btn btn-b" id="btn-import-confirm" style="display:none" onclick="confirmImport()">✅ Importer les élèves</button>
-    </div>
-
-  </div>
-</div>
-
-<!-- FIREBASE -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
@@ -622,49 +407,33 @@ const firebaseConfig = {
   appId: "1:396511777428:web:c41c1bd4eced8f4e6c5a81"
 };
 
-const fbApp = initializeApp(firebaseConfig);
-const auth  = getAuth(fbApp);
-const db    = getDatabase(fbApp);
-const provider = new GoogleAuthProvider();
+const fbApp  = initializeApp(firebaseConfig);
+const auth   = getAuth(fbApp);
+const db     = getDatabase(fbApp);
+const prov   = new GoogleAuthProvider();
 
-// ── STATE ────────────────────────────────────────────
+// ── STATE ──
 let uid = null;
-let classes = {};
-let currentClassId = null;
-let editEleveId = null;
-let EQ = [];
-let selectedSepCombo = null;  // { nTeamsG, nTeamsF } en mode séparé
-let currentSport = null;      // clé APSA active (slug)
-let savedSports  = {};        // { [slug]: { label, data, savedAt, ... } }
+let sources = {};           // { [srcId]: { nom, eleves:{} } }
+let currentSrcId = null;
+let editId = null;
+let composedClasses = [];   // [ {nom, color, eleves:[]} ]
+let moveEleveId = null;
+let moveFromCls = null;
+let currentMode = 'equilibre';
 let dbListener = null;
 
-// ── EVAL STATE ────────────────────────────────────────
-let evalGrids    = {};   // { [gridKey]: { label, criteres:[{id,nom,max}], notes:{[eleveId]:{[critereId]:val}} } }
-let currentGrid  = null; // clé de la grille active
-let editCritereId = null; // null = ajout, sinon id du critère en cours d'édition
+const G = id => document.getElementById(id);
+const OPT_LABELS = { LCA:'LCA', LCE:'LCE', ALL:'All.', ESP:'Esp.', AUCUNE:'—' };
+const CLS_COLORS = ['#1a73e8','#34a853','#ea4335','#fb8c00','#8e24aa','#00897b'];
 
-// ── UTILS ────────────────────────────────────────────
-const G  = id => document.getElementById(id);
-const st = n  => '★'.repeat(6-n) + '☆'.repeat(n-1);
-const COL = ['#e53935','#1e88e5','#43a047','#fb8c00','#8e24aa','#00897b','#6d4c41','#f06292'];
-// Couleurs personnalisées par équipe (index → couleur hex)
-let teamColors = {};
-
-function elevesOf(classId) {
-  return classes[classId]?.eleves || {};
-}
-function elevesArr(classId) {
-  return Object.entries(elevesOf(classId)).map(([id,e]) => ({id, ...e}));
-}
-function curEleves() { return elevesArr(currentClassId); }
-
-// ── AUTH ─────────────────────────────────────────────
+// ── AUTH ──
 window.loginGoogle = async () => {
-  try { await signInWithPopup(auth, provider); }
+  try { await signInWithPopup(auth, prov); }
   catch(e) { alert('Erreur : ' + e.message); }
 };
 window.logout = async () => {
-  if (dbListener) { off(ref(db, `users/${uid}/classes`)); dbListener = null; }
+  if (dbListener) { off(ref(db, `users/${uid}/classes5`)); dbListener = null; }
   await signOut(auth);
 };
 
@@ -672,1747 +441,446 @@ onAuthStateChanged(auth, user => {
   if (user) {
     uid = user.uid;
     G('login-screen').style.display = 'none';
-    G('app').style.display  = 'block';
-    G('user-name').textContent = user.displayName || '';
+    G('app').style.display = 'flex';
     G('user-avatar').src = user.photoURL || '';
     startListening();
   } else {
-    uid = null; classes = {}; currentClassId = null;
+    uid = null; sources = {}; currentSrcId = null;
     G('login-screen').style.display = 'flex';
-    G('app').style.display  = 'none';
+    G('app').style.display = 'none';
   }
 });
 
-// ── REALTIME LISTENER ────────────────────────────────
 function startListening() {
-  const classesRef = ref(db, `users/${uid}/classes`);
-  if (dbListener) off(classesRef);
-  dbListener = onValue(classesRef, async snap => {
-    classes = snap.val() || {};
-    const ids = Object.keys(classes);
-
-    renderClassBar();
-
-    // Si la classe actuelle a disparu
-    if (currentClassId && !classes[currentClassId]) {
-      currentClassId = null;
+  const r = ref(db, `users/${uid}/classes5`);
+  if (dbListener) off(r);
+  dbListener = onValue(r, snap => {
+    sources = snap.val() || {};
+    // Charger classes composées
+    if (sources._composed) {
+      composedClasses = sources._composed;
+      delete sources._composed;
     }
-
-    if (!currentClassId) {
-      if (ids.length > 0) {
-        await selectClass(ids[0]);
-      } else {
-        showNoClass();
-      }
-    } else {
-      const clsNom = classes[currentClassId]?.nom || '';
-      G('add-card-title').innerHTML = `➕ Ajouter un élève <span style="font-weight:400;color:var(--primary);font-size:13px;margin-left:6px;">dans ${clsNom}</span>`;
-      renderEleves();
-      updateStats();
+    renderSourceBar();
+    if (!currentSrcId || !sources[currentSrcId]) {
+      currentSrcId = Object.keys(sources)[0] || null;
     }
+    G('tabs').style.display = currentSrcId ? 'flex' : 'none';
+    renderEleves();
+    updateStats();
+    if (composedClasses.length) renderClasses();
   });
 }
 
-// ── CLASS BAR ────────────────────────────────────────
-function renderClassBar() {
-  const entries = Object.entries(classes);
-  let html = entries.map(([id, cls]) => `
-    <span class="class-chip ${id === currentClassId ? 'active' : ''}" onclick="selectClass('${id}')">
-      📚 ${cls.nom}
-      <button class="del-cls" onclick="event.stopPropagation();deleteClass('${id}')" title="Supprimer">×</button>
+// ── SOURCE BAR ──
+function renderSourceBar() {
+  let html = Object.entries(sources).map(([id, s]) => `
+    <span class="src-chip ${id === currentSrcId ? 'active' : ''}" onclick="selectSrc('${id}')">
+      📋 ${s.nom}
+      <button class="del-src" onclick="event.stopPropagation();delSrc('${id}')" title="Supprimer">×</button>
     </span>`).join('');
-  html += `<button class="btn-add-class" onclick="addClassPrompt()">＋ Nouvelle classe</button>`;
-  G('class-bar').innerHTML = html;
+  html += `<button class="btn-add-src" onclick="addSrcPrompt()">＋ Nouvelle classe source</button>`;
+  G('source-bar').innerHTML = html;
 }
 
-window.selectClass = async id => {
-  if (!classes[id]) return;
-  currentClassId = id;
-  EQ = [];
-  savedSports  = {};
-  currentSport = null;
-  selectedSepCombo = null;
-  evalGrids = {};
-  currentGrid = null;
-  G('b-eq').textContent = '0';
-  G('eqcontent').innerHTML = '<div class="empty"><div class="em">⚽</div><p>Aucune équipe composée.<br>Allez dans <strong>Paramètres</strong>.</p></div>';
-  G('no-class-view').style.display = 'none';
-  G('panels').style.display = 'block';
-  G('tabs').style.display   = 'flex';
-  const clsNom = classes[id]?.nom || '';
-  G('add-card-title').innerHTML = `➕ Ajouter un élève <span style="font-weight:400;color:var(--primary);font-size:13px;margin-left:6px;">dans ${clsNom}</span>`;
-  renderClassBar();
-  showTab('eleves');
+window.selectSrc = id => {
+  currentSrcId = id;
+  renderSourceBar();
   renderEleves();
-
-  // Recharge toutes les équipes par sport
-  try {
-    const snap = await new Promise(res => {
-      const r = ref(db, `users/${uid}/classes/${id}/equipes_sport`);
-      onValue(r, res, { onlyOnce: true });
-    });
-    const all = snap.val() || {};
-    savedSports = all;
-    const sportKeys = Object.keys(all).filter(k => all[k]?.data?.length);
-    if (sportKeys.length) {
-      currentSport = sportKeys[0];
-      EQ = all[currentSport].data;
-      // Restaure les paramètres du dernier sport chargé
-      const saved = all[currentSport];
-      if (saved.neq)     G('neq').value = saved.neq;
-      if (saved.njoueurs) G('njoueurs').value = saved.njoueurs;
-      if (saved.mix) document.querySelector(`input[name=mix][value="${saved.mix}"]`).checked = true;
-      if (saved.bal) {
-        const balInput = document.querySelector(`input[name=eq][value="${saved.bal}"]`);
-        if (balInput) balInput.checked = true;
-      }
-      updateEqBadge();
-      renderApsaChips();
-      renderSportTabs();
-      renderEQ();
-    } else {
-      renderApsaChips();
-    }
-  } catch(e) { renderApsaChips(); }
-
-  await loadEvalGrids(id);
+  updateStats();
 };
 
-function showNoClass() {
-  currentClassId = null;
-  G('no-class-view').style.display = 'block';
-  G('panels').style.display = 'none';
-  G('tabs').style.display   = 'none';
-  G('add-card-title').innerHTML = '➕ Ajouter un élève';
-  renderClassBar();
-}
-
-window.addClassPrompt = () => {
-  G('class-inp').value = '';
-  G('modal-class').classList.add('open');
-  setTimeout(() => G('class-inp').focus(), 80);
-};
-window.closeClassModal = () => G('modal-class').classList.remove('open');
-window.saveClass = async () => {
-  const nom = G('class-inp').value.trim();
-  if (!nom) return;
-  const r = push(ref(db, `users/${uid}/classes`));
-  await set(r, { nom, eleves: {} });
-  closeClassModal();
-};
-window.deleteClass = async id => {
-  const cls = classes[id]; if (!cls) return;
-  const nb = Object.keys(cls.eleves || {}).length;
-  if (!confirm(`Supprimer la classe "${cls.nom}" et ses ${nb} élève(s) ?`)) return;
-  await remove(ref(db, `users/${uid}/classes/${id}`));
+window.addSrcPrompt = async () => {
+  const nom = prompt('Nom de la classe actuelle (ex : 4A, 4B…) :');
+  if (!nom?.trim()) return;
+  const r = push(ref(db, `users/${uid}/classes5`));
+  await set(r, { nom: nom.trim(), eleves: {} });
 };
 
-// ── TABS ─────────────────────────────────────────────
-function renderOptStats() {
-  const el = G('opt-stats-content'); if (!el) return;
-  const all = curEleves();
-  const pr  = all.filter(e => !e.abs);
-  const OPT_LABELS = { lca: 'LCA Latin', lce: 'LCE', all: 'Allemand', esp: 'Espagnol' };
-  const colors = { lca:'#ede7f6;color:#4527a0', lce:'#e8f5e9;color:#1b5e20', all:'#e3f2fd;color:#0d47a1', esp:'#fff3e0;color:#bf360c' };
-  let html = '';
-  Object.entries(OPT_LABELS).forEach(([k, label]) => {
-    const n = pr.filter(e => (e.opts||[]).includes(k)).length;
-    const g = pr.filter(e => (e.opts||[]).includes(k) && e.sx==='G').length;
-    const f = pr.filter(e => (e.opts||[]).includes(k) && e.sx==='F').length;
-    html += `<div class="chip" style="background:${colors[k]};flex-direction:column;align-items:flex-start;gap:2px;padding:8px 14px;border-radius:8px">
-      <span style="font-size:12px;font-weight:700">${label}</span>
-      <span style="font-size:15px;font-weight:800">${n} élève${n>1?'s':''}</span>
-      <span style="font-size:11px;opacity:.8">♂ ${g} · ♀ ${f}</span>
-    </div>`;
-  });
-  const sansOpt = pr.filter(e => !e.opts || e.opts.length === 0).length;
-  html += `<div class="chip" style="flex-direction:column;align-items:flex-start;gap:2px;padding:8px 14px;border-radius:8px">
-    <span style="font-size:12px;font-weight:700;color:var(--muted)">Sans option</span>
-    <span style="font-size:15px;font-weight:800">${sansOpt}</span>
-  </div>`;
-  el.innerHTML = html;
-}
+window.delSrc = async id => {
+  const s = sources[id];
+  const nb = Object.keys(s?.eleves||{}).length;
+  if (!confirm(`Supprimer la classe "${s?.nom}" et ses ${nb} élève(s) ?`)) return;
+  await remove(ref(db, `users/${uid}/classes5/${id}`));
+  if (currentSrcId === id) currentSrcId = null;
+};
 
-window.showTab = t => {
-  if (t === 'eval') {
-    openEvalLock();
-    return;
-  }
+// ── TABS ──
+window.showTab = tab => {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tb').forEach(b => b.classList.remove('active'));
-  G('panel-' + t).classList.add('active');
-  G('tab-' + t).classList.add('active');
-  if (t === 'params') { preview(); renderOptStats(); }
-  if (t === 'eval')   renderEvalContent();
+  G('panel-' + tab).classList.add('active');
+  G('tab-' + tab).classList.add('active');
+  if (tab === 'classes') renderClasses();
 };
 
-let evalUnlocked = false;
+// ── ÉLÈVES ──
+function elevesOf(srcId) { return sources[srcId]?.eleves || {}; }
+function elevesArr(srcId) { return Object.entries(elevesOf(srcId)).map(([id,e]) => ({id,...e})); }
+function curEleves() { return elevesArr(currentSrcId); }
 
-window.openEvalLock = () => {
-  G('eval-lock-input').value = '';
-  G('eval-lock-error').style.display = 'none';
-  G('modal-eval-lock').classList.add('open');
-  setTimeout(() => G('eval-lock-input').focus(), 80);
+const splitNom = str => {
+  const parts = str.trim().split(/\s+/);
+  const family = parts.filter(w => w === w.toUpperCase() && w.length > 1).join(' ');
+  const first  = parts.filter(w => w !== w.toUpperCase() || w.length <= 1).join(' ');
+  return { family: family || str, first: first || '' };
 };
-window.closeEvalLock = () => G('modal-eval-lock').classList.remove('open');
-window.checkEvalPassword = () => {
-  const val = G('eval-lock-input').value;
-  if (val === 'Eps 2026') {
-    closeEvalLock();
-    // Ouvre réellement l'onglet
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tb').forEach(b => b.classList.remove('active'));
-    G('panel-eval').classList.add('active');
-    G('tab-eval').classList.add('active');
-    renderEvalContent();
-  } else {
-    G('eval-lock-error').style.display = 'block';
-    G('eval-lock-input').value = '';
-    G('eval-lock-input').focus();
-  }
-};
-// Verrouille automatiquement quand on quitte l'onglet éval
-window.lockEval = () => { evalUnlocked = false; };
 
-// ── ÉLÈVES ───────────────────────────────────────────
 window.addEleve = async () => {
-  if (!currentClassId) return;
+  if (!currentSrcId) return;
   const nom = G('inp').value.trim();
   if (!nom) { G('inp').focus(); return; }
-  const sx = document.querySelector('input[name=sx]:checked').value;
-  const nv = parseInt(document.querySelector('input[name=nv]:checked').value);
-  const r  = push(ref(db, `users/${uid}/classes/${currentClassId}/eleves`));
-  await set(r, { nom, sx, nv, abs: false });
+  const sx  = document.querySelector('input[name=sx]:checked').value;
+  const opt = document.querySelector('input[name=opt]:checked').value;
+  const nv  = parseInt(document.querySelector('input[name=nv]:checked').value);
+  const r   = push(ref(db, `users/${uid}/classes5/${currentSrcId}/eleves`));
+  await set(r, { nom, sx, opt, nv });
   G('inp').value = '';
   G('inp').focus();
 };
 
+window.delEleve = async id => {
+  if (!confirm('Supprimer cet élève ?')) return;
+  await remove(ref(db, `users/${uid}/classes5/${currentSrcId}/eleves/${id}`));
+};
+
+window.openEdit = id => {
+  editId = id;
+  const e = elevesOf(currentSrcId)[id];
+  G('en2').value = e.nom;
+  document.querySelector(`input[name=esx][value=${e.sx}]`).checked = true;
+  document.querySelector(`input[name=eopt][value=${e.opt||'AUCUNE'}]`).checked = true;
+  document.querySelector(`input[name=env][value=${e.nv}]`).checked = true;
+  G('mo-edit').classList.add('open');
+};
+
+window.saveEdit = async () => {
+  const nom = G('en2').value.trim();
+  if (!nom) return;
+  const sx  = document.querySelector('input[name=esx]:checked').value;
+  const opt = document.querySelector('input[name=eopt]:checked').value;
+  const nv  = parseInt(document.querySelector('input[name=env]:checked').value);
+  await update(ref(db, `users/${uid}/classes5/${currentSrcId}/eleves/${editId}`), { nom, sx, opt, nv });
+  closeMo('mo-edit');
+};
+
+window.setNiveau = async (id, nv) => {
+  await update(ref(db, `users/${uid}/classes5/${currentSrcId}/eleves/${id}`), { nv });
+};
+
 window.renderEleves = () => {
-  if (!currentClassId) return;
-  const q  = (G('q').value || '').toLowerCase();
-  const fs = G('fsx').value;
-  const fo = window._optFilter || '';
-  let L = curEleves().filter(e => {
-    if (!e.nom.toLowerCase().includes(q)) return false;
-    if (fs && e.sx !== fs) return false;
-    if (fo === 'aucune') return !e.opts || e.opts.length === 0;
-    if (fo) return e.opts && e.opts.includes(fo);
-    return true;
-  });
-
-  // Tri : présents avant absents, puis NOM de famille (mots en majuscules), puis prénom
-  const splitNom = str => {
-    const parts = str.trim().split(/\s+/);
-    const family = parts.filter(w => w === w.toUpperCase() && w.length > 1).join(' ');
-    const first  = parts.filter(w => w !== w.toUpperCase() || w.length <= 1).join(' ');
-    return { family: family || str, first: first || '' };
-  };
+  if (!currentSrcId) {
+    G('list').innerHTML = '<div class="empty"><div class="em">📋</div><p>Créez d\'abord une classe source.</p></div>';
+    return;
+  }
+  const q   = (G('q')?.value || '').toLowerCase();
+  const fsx = G('fsx')?.value || '';
+  const fop = G('fopt')?.value || '';
+  let L = curEleves().filter(e =>
+    e.nom.toLowerCase().includes(q) &&
+    (!fsx || e.sx === fsx) &&
+    (!fop || (e.opt||'AUCUNE') === fop)
+  );
   L.sort((a, b) => {
-    if (a.abs !== b.abs) return a.abs ? 1 : -1;
     const na = splitNom(a.nom), nb = splitNom(b.nom);
-    const cmpFamily = na.family.localeCompare(nb.family, 'fr', { sensitivity: 'base' });
-    if (cmpFamily !== 0) return cmpFamily;
-    return na.first.localeCompare(nb.first, 'fr', { sensitivity: 'base' });
+    const c = na.family.localeCompare(nb.family, 'fr', { sensitivity: 'base' });
+    return c !== 0 ? c : na.first.localeCompare(nb.first, 'fr', { sensitivity: 'base' });
   });
 
-  // Couleur selon niveau : nv5=vert(fort), nv3=jaune, nv1=rouge(faible)
   const nvColor = ['','#ea4335','#ff7043','#fbbc04','#8bc34a','#43a047'];
-  const OPT_LABELS = { lca: 'LCA Latin', lce: 'LCE', all: 'Allemand', esp: 'Espagnol' };
-
-  const el = G('list');
-  el.innerHTML = !L.length
+  G('list').innerHTML = !L.length
     ? '<div class="empty" style="grid-column:1/-1"><div class="em">👀</div><p>Aucun élève trouvé.</p></div>'
     : L.map(e => {
-      const col = nvColor[e.nv];
-      const nbOn = e.nv;
-      const opts = e.opts || [];
-      const badgesHtml = opts.map(o => `<span class="opt-badge ${o}">${OPT_LABELS[o]||o}</span>`).join('');
-      const checksHtml = Object.entries(OPT_LABELS).map(([k, label]) => `
-        <label style="display:inline-flex;align-items:center;gap:3px;font-size:11px;cursor:pointer;padding:2px 6px;border-radius:4px;border:1px solid var(--border);background:${opts.includes(k)?'#f3f0ff':'var(--bg)'}">
-          <input type="checkbox" ${opts.includes(k)?'checked':''} onchange="toggleOpt('${e.id}','${k}',this.checked)" style="cursor:pointer">
-          ${label}
-        </label>`).join('');
+      const col = nvColor[e.nv] || '#fbbc04';
+      const opt = e.opt || 'AUCUNE';
       return `
-      <div class="sc ${e.abs ? 'absent' : ''}">
+      <div class="sc">
         <div class="gab ${e.sx}">${e.sx === 'G' ? '♂' : '♀'}</div>
         <div class="sinfo">
           <div class="sname" title="${e.nom}">${e.nom}</div>
           <div class="smeta">
             <span>${e.sx === 'G' ? 'Garçon' : 'Fille'}</span>
-            ${e.abs ? '<span style="color:var(--red);font-weight:700;font-size:11px">ABSENT</span>' : ''}
+            <span class="opt-badge opt-${opt}">${opt === 'AUCUNE' ? 'Aucune option' : opt}</span>
           </div>
-          ${badgesHtml ? `<div style="margin-top:3px">${badgesHtml}</div>` : ''}
-          <div class="opts-check-row" style="margin-top:5px">${checksHtml}</div>
-          <div class="inline-stars" title="Cliquer pour changer le niveau" style="margin-top:4px">
-            ${[1,2,3,4,5].map(n => `
-              <span class="istar ${n <= nbOn ? 'on' : 'off'}"
-                style="${n <= nbOn ? `color:${col}` : ''}"
-                onclick="setNiveau('${e.id}', ${n})"
-                title="Niveau ${n}">★</span>`).join('')}
+          <div class="niv-stars">
+            ${[1,2,3,4,5].map(n => `<span class="istar ${n<=e.nv?'on':'off'}" style="${n<=e.nv?'color:'+col:''}" onclick="setNiveau('${e.id}',${n})">★</span>`).join('')}
             <span style="font-size:11px;color:${col};font-weight:700;margin-left:4px">Niv.${e.nv}</span>
           </div>
         </div>
         <div class="sact">
-          <button class="ico-btn" title="${e.abs ? 'Présent' : 'Absent'}" onclick="togAbs('${e.id}')">${e.abs ? '✅' : '😴'}</button>
           <button class="ico-btn" onclick="openEdit('${e.id}')">✏️</button>
           <button class="ico-btn" onclick="delEleve('${e.id}')">🗑️</button>
         </div>
       </div>`;
     }).join('');
-
-  updateStats();
 };
 
 function updateStats() {
+  if (!currentSrcId) { G('sbar').innerHTML = ''; return; }
   const all = curEleves();
-  const pr  = all.filter(e => !e.abs);
+  const opts = ['LCA','LCE','ALL','ESP','AUCUNE'];
+  const optCounts = Object.fromEntries(opts.map(o => [o, all.filter(e=>(e.opt||'AUCUNE')===o).length]));
+  const avgNv = all.length ? (all.reduce((s,e)=>s+(e.nv||3),0)/all.length).toFixed(1) : '—';
   G('sbar').innerHTML = `
     <div class="chip">👥 Total <strong>${all.length}</strong></div>
-    <div class="chip">✅ Présents <strong>${pr.length}</strong></div>
-    <div class="chip" style="color:var(--boy)">♂ <strong>${pr.filter(e=>e.sx==='G').length}</strong></div>
-    <div class="chip" style="color:var(--girl)">♀ <strong>${pr.filter(e=>e.sx==='F').length}</strong></div>
-    <div class="chip" style="color:var(--red)">😴 <strong>${all.filter(e=>e.abs).length}</strong></div>`;
+    <div class="chip" style="color:var(--boy)">♂ <strong>${all.filter(e=>e.sx==='G').length}</strong></div>
+    <div class="chip" style="color:var(--girl)">♀ <strong>${all.filter(e=>e.sx==='F').length}</strong></div>
+    ${opts.filter(o=>optCounts[o]>0).map(o=>`<div class="chip"><span class="opt-badge opt-${o}">${o}</span> <strong>${optCounts[o]}</strong></div>`).join('')}
+    <div class="chip">⭐ Niv.moy. <strong>${avgNv}</strong></div>`;
   G('b-el').textContent = all.length;
-
-  // Si on est en mode séparé, recalculer les combos disponibles
-  const isSep = document.querySelector('input[name=mix]:checked')?.value === 'sep';
-  if (isSep) {
-    selectedSepCombo = null;
-    G('sel-boys-badge').style.display  = 'none';
-    G('sel-girls-badge').style.display = 'none';
-    G('sep-compose-wrap').style.display = 'none';
-    G('sep-hint').style.display         = 'block';
-    renderSepCombos();
-  }
 }
 
-window.toggleOpt = async (id, opt, checked) => {
-  const e = elevesOf(currentClassId)[id]; if (!e) return;
-  const opts = Array.isArray(e.opts) ? [...e.opts] : [];
-  const idx = opts.indexOf(opt);
-  if (checked && idx === -1) opts.push(opt);
-  if (!checked && idx !== -1) opts.splice(idx, 1);
-  await update(ref(db, `users/${uid}/classes/${currentClassId}/eleves/${id}`), { opts });
+// ── MODE SELECTOR ──
+window.selectMode = mode => {
+  currentMode = mode;
+  ['equilibre','options','hybride'].forEach(m => G('mode-'+m).classList.toggle('selected', m===mode));
+  updateComposerPreview();
 };
 
-window._optFilter = '';
-window.toggleOptFilter = (val) => {
-  window._optFilter = val;
-  const pairs = [['fopt-all',''],['fopt-lca','lca'],['fopt-lce','lce'],['fopt-all2','all'],['fopt-esp','esp'],['fopt-noopt','aucune']];
-  const actCls = {lca:'active-lca',lce:'active-lce',all:'active-all',esp:'active-esp',aucune:'active-lca'};
-  pairs.forEach(([id, key]) => {
-    const btn = G(id); if (!btn) return;
-    btn.className = 'opt-filter-btn';
-    if (key === val) {
-      if (val === '') btn.style.fontWeight = '700';
-      else { btn.classList.add(actCls[val] || 'active-lca'); btn.style.fontWeight = '700'; }
-    } else { btn.style.fontWeight = ''; }
+window.updateComposerPreview = () => {
+  const nb = parseInt(G('nb-classes')?.value) || 3;
+  const all = getAllEleves();
+  if (!all.length) { G('composer-preview').innerHTML = ''; return; }
+
+  const opts = ['LCA','LCE','ALL','ESP','AUCUNE'];
+  let html = `<div class="al al-i" style="margin-top:12px">`;
+  html += `<strong>${all.length} élèves</strong> issus de ${Object.keys(sources).length} classe(s) source(s) → <strong>${nb} classes</strong> de ~${Math.round(all.length/nb)} élèves<br>`;
+  opts.forEach(o => {
+    const n = all.filter(e=>(e.opt||'AUCUNE')===o).length;
+    if (n) html += `<span class="opt-badge opt-${o}" style="margin-right:4px">${o}</span> ${n} élève(s) &nbsp;`;
   });
-  renderEleves();
-};
-
-window.togAbs = async id => {
-  const e = elevesOf(currentClassId)[id]; if (!e) return;
-  await update(ref(db, `users/${uid}/classes/${currentClassId}/eleves/${id}`), { abs: !e.abs });
-};
-
-window.setNiveau = async (id, nv) => {
-  if (nv < 1 || nv > 5) return;
-  await update(ref(db, `users/${uid}/classes/${currentClassId}/eleves/${id}`), { nv });
-};
-window.delEleve = async id => {
-  if (!confirm('Supprimer cet élève ?')) return;
-  await remove(ref(db, `users/${uid}/classes/${currentClassId}/eleves/${id}`));
-};
-window.allPresent = async () => {
-  const u = {};
-  curEleves().forEach(e => { u[`users/${uid}/classes/${currentClassId}/eleves/${e.id}/abs`] = false; });
-  await update(ref(db), u);
-};
-window.allAbsent = async () => {
-  const u = {};
-  curEleves().forEach(e => { u[`users/${uid}/classes/${currentClassId}/eleves/${e.id}/abs`] = true; });
-  await update(ref(db), u);
-};
-
-// ── MODAL EDIT ───────────────────────────────────────
-window.openEdit = id => {
-  const e = elevesOf(currentClassId)[id]; if (!e) return;
-  editEleveId = id;
-  G('en2').value = e.nom;
-  document.querySelector(`input[name=esx][value="${e.sx}"]`).checked = true;
-  document.querySelector(`input[name=env][value="${e.nv}"]`).checked = true;
-  G('modal').classList.add('open');
-};
-window.closeM = () => { G('modal').classList.remove('open'); editEleveId = null; };
-window.saveEdit = async () => {
-  if (!editEleveId) return;
-  const nom = G('en2').value.trim(); if (!nom) return;
-  const sx  = document.querySelector('input[name=esx]:checked').value;
-  const nv  = parseInt(document.querySelector('input[name=env]:checked').value);
-  await update(ref(db, `users/${uid}/classes/${currentClassId}/eleves/${editEleveId}`), { nom, sx, nv });
-  closeM();
-};
-
-// ── APSA (activités libres) ───────────────────────────
-
-function slugify(str) {
-  return str.trim().toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'apsa';
-}
-
-window.updateApsaAddBtn = () => {
-  const v = G('apsa-input').value.trim();
-  const btn = G('apsa-add-btn');
-  btn.disabled = !v;
-  btn.style.opacity = v ? '1' : '.5';
-  btn.style.cursor  = v ? 'pointer' : 'default';
-};
-
-window.addApsa = () => {
-  const label = G('apsa-input').value.trim();
-  if (!label) return;
-  const key = slugify(label);
-  // Si la clé existe déjà on sélectionne juste
-  if (!savedSports[key]) {
-    savedSports[key] = { label, data: [] };
-  }
-  currentSport = key;
-  G('apsa-input').value = '';
-  updateApsaAddBtn();
-  renderApsaChips();
-  renderSportPicker(); // no-op maintenant mais garde compatibilité
-};
-
-function renderApsaChips() {
-  const el = G('apsa-chips');
-  const keys = Object.keys(savedSports);
-  if (!keys.length) { el.innerHTML = '<span style="font-size:13px;color:var(--muted)">Aucune APSA créée pour cette classe.</span>'; return; }
-
-  el.innerHTML = keys.map(key => {
-    const apsa = savedSports[key];
-    const isSel = currentSport === key;
-    const hasTeams = apsa?.data?.length > 0;
-    return `<div style="display:inline-flex;align-items:center;gap:0;
-              border:2.5px solid ${isSel ? 'var(--primary)' : (hasTeams ? 'var(--green)' : 'var(--border)')};
-              border-radius:20px;background:${isSel ? 'var(--primary)' : (hasTeams ? '#e8f5e9' : '#fff')};
-              overflow:hidden;transition:all .15s">
-      <button onclick="selectSport('${key}')"
-        style="padding:7px 13px;border:none;background:none;
-               color:${isSel ? '#fff' : (hasTeams ? 'var(--green)' : 'var(--text)')};
-               cursor:pointer;font-size:13px;font-weight:700">
-        ${apsa.label}${hasTeams ? ' ✓' : ''}
-      </button>
-      <button onclick="deleteApsa('${key}')" title="Supprimer cette APSA"
-        style="padding:6px 10px;border:none;border-left:2px solid ${isSel ? 'rgba(255,255,255,.3)' : 'var(--border)'};
-               background:none;color:${isSel ? 'rgba(255,255,255,.8)' : 'var(--muted)'};
-               cursor:pointer;font-size:15px;font-weight:700;line-height:1">
-        ×
-      </button>
-    </div>`;
-  }).join('');
-}
-
-window.selectSport = key => {
-  currentSport = key;
-  if (savedSports[key]?.data?.length) {
-    EQ = savedSports[key].data;
-    // Restaure les couleurs personnalisées
-    teamColors = {};
-    EQ.forEach((t, i) => { if (t.color) teamColors[i] = t.color; });
-  } else EQ = [];
-  renderApsaChips();
-  renderSportTabs();
-};
-
-window.deleteApsa = async key => {
-  const apsa = savedSports[key];
-  const hasTeams = apsa?.data?.length > 0;
-  const msg = hasTeams
-    ? `Supprimer l'APSA "${apsa.label}" et ses ${apsa.data.length} équipe(s) sauvegardée(s) ?`
-    : `Supprimer l'APSA "${apsa.label}" ?`;
-  if (!confirm(msg)) return;
-  if (hasTeams) await remove(ref(db, `users/${uid}/classes/${currentClassId}/equipes_sport/${key}`));
-  delete savedSports[key];
-  if (currentSport === key) {
-    const remaining = Object.keys(savedSports).filter(k => savedSports[k]?.data?.length);
-    currentSport = remaining[0] || null;
-    EQ = currentSport ? (savedSports[currentSport]?.data || []) : [];
-  }
-  updateEqBadge();
-  renderApsaChips();
-  renderSportTabs();
-  if (EQ.length) renderEQ();
-  else G('eqcontent').innerHTML = '<div class="empty"><div class="em">⚽</div><p>Aucune équipe composée.<br>Allez dans <strong>Paramètres</strong> et cliquez sur "Composer les équipes".</p></div>';
-};
-
-function updateEqBadge() {
-  const total = Object.values(savedSports).reduce((s, v) => s + (v?.data?.length || 0), 0);
-  G('b-eq').textContent = total;
-}
-
-function renderSportPicker() { /* no-op – remplacé par renderApsaChips */ }
-
-function renderSportTabs() {
-  const bar = G('sport-tabs-bar');
-  const sportKeys = Object.keys(savedSports).filter(k => savedSports[k]?.data?.length);
-  if (!sportKeys.length) { bar.style.display = 'none'; return; }
-  bar.style.display = 'flex';
-
-  bar.innerHTML = sportKeys.map(key => {
-    const apsa = savedSports[key];
-    const label = apsa.label || key;
-    const isSel = currentSport === key;
-    return `<div style="display:inline-flex;align-items:center;
-              border:2.5px solid ${isSel ? 'var(--primary)' : 'var(--border)'};
-              border-radius:20px;background:${isSel ? 'var(--primary)' : '#fff'};
-              overflow:hidden;transition:all .15s">
-      <button onclick="switchSportTab('${key}')"
-        style="padding:7px 13px;border:none;background:none;
-               color:${isSel ? '#fff' : 'var(--text)'};
-               cursor:pointer;font-size:13px;font-weight:700">
-        ${label} <span style="opacity:.75;font-weight:400">(${apsa.data.length} éq.)</span>
-      </button>
-      <button onclick="deleteSportTeams('${key}')" title="Supprimer"
-        style="padding:6px 10px;border:none;
-               border-left:2px solid ${isSel ? 'rgba(255,255,255,.3)' : 'var(--border)'};
-               background:none;color:${isSel ? 'rgba(255,255,255,.8)' : 'var(--red)'};
-               cursor:pointer;font-size:15px;font-weight:700;line-height:1">
-        ×
-      </button>
-    </div>`;
-  }).join('');
-}
-
-window.switchSportTab = key => {
-  currentSport = key;
-  if (savedSports[key]?.data?.length) {
-    EQ = savedSports[key].data;
-    teamColors = {};
-    EQ.forEach((t, i) => { if (t.color) teamColors[i] = t.color; });
-  }
-  renderSportTabs();
-  renderApsaChips();
-  renderEQ();
-};
-
-window.deleteSportTeams = async key => {
-  const apsa = savedSports[key];
-  if (!confirm(`Supprimer les équipes "${apsa?.label || key}" ?`)) return;
-  await remove(ref(db, `users/${uid}/classes/${currentClassId}/equipes_sport/${key}`));
-  if (savedSports[key]) savedSports[key].data = [];
-  if (currentSport === key) {
-    const remaining = Object.keys(savedSports).filter(k => savedSports[k]?.data?.length);
-    currentSport = remaining[0] || key; // garde la sélection sur l'APSA vidée
-    EQ = savedSports[currentSport]?.data?.length ? savedSports[currentSport].data : [];
-  }
-  updateEqBadge();
-  renderSportTabs();
-  renderApsaChips();
-  if (EQ.length) renderEQ();
-  else G('eqcontent').innerHTML = '<div class="empty"><div class="em">⚽</div><p>Aucune équipe composée.<br>Allez dans <strong>Paramètres</strong> et cliquez sur "Composer les équipes".</p></div>';
-};
-window.onMixChange = () => {
-  const isSep = document.querySelector('input[name=mix]:checked')?.value === 'sep';
-  G('si-neq').style.display          = isSep ? 'none' : '';
-  G('si-njoueurs').style.display     = isSep ? 'none' : '';
-  G('compose-mixte-btn').style.display = isSep ? 'none' : '';
-  G('sep-panel').style.display       = isSep ? 'block' : 'none';
-  G('prev').innerHTML                = '';
-  selectedSepCombo = null;
-  if (isSep) renderSepCombos();
-  else preview();
-};
-
-// Calcule toutes les configs valides (équipes de 3 à 7) pour N joueurs
-function validConfigs(N) {
-  const configs = [];
-  if (N < 3) return configs;
-  for (let nt = 1; nt <= N; nt++) {
-    const base = Math.floor(N / nt);
-    const rem  = N % nt;
-    const maxSz = rem > 0 ? base + 1 : base;
-    if (base >= 3 && maxSz <= 7) {
-      let sizeLabel;
-      if (rem === 0)      sizeLabel = `${nt} équipe${nt>1?'s':''} de ${base}`;
-      else                sizeLabel = `${nt} équipe${nt>1?'s':''} de ${base}-${base+1}`;
-      configs.push({ nTeams: nt, base, rem, sizeLabel });
-    }
-  }
-  return configs;
-}
-
-function makeOptionBtn(cfg, gender, selected) {
-  const color = gender === 'G' ? 'var(--boy)' : 'var(--girl)';
-  const bgSel = gender === 'G' ? '#e8f0fe' : '#fce4ec';
-  const isSel = selected === cfg.nTeams;
-  return `<button
-    onclick="selectSex('${gender}', ${cfg.nTeams})"
-    data-gender="${gender}" data-n="${cfg.nTeams}"
-    style="padding:10px 16px;border:2.5px solid ${isSel ? color : 'var(--border)'};
-           border-radius:10px;background:${isSel ? bgSel : '#fff'};
-           cursor:pointer;font-size:13px;font-weight:${isSel?'700':'600'};
-           color:${isSel ? color : 'var(--text)'};text-align:left;
-           transition:all .15s;width:100%">
-    ${cfg.sizeLabel}
-  </button>`;
-}
-
-function renderSepCombos() {
-  if (!currentClassId) return;
-  const pr = curEleves().filter(e => !e.abs);
-  const nG = pr.filter(e => e.sx === 'G').length;
-  const nF = pr.filter(e => e.sx === 'F').length;
-
-  const boysC  = validConfigs(nG);
-  const girlsC = validConfigs(nF);
-
-  const selG = selectedSepCombo?.nTeamsG ?? null;
-  const selF = selectedSepCombo?.nTeamsF ?? null;
-
-  // Colonne garçons
-  G('boys-options').innerHTML = boysC.length
-    ? boysC.map(c => makeOptionBtn(c, 'G', selG)).join('')
-    : `<div class="al al-w" style="font-size:13px">⚠️ Pas assez de garçons (${nG}) pour des équipes de 3 à 7.</div>`;
-
-  // Colonne filles
-  G('girls-options').innerHTML = girlsC.length
-    ? girlsC.map(c => makeOptionBtn(c, 'F', selF)).join('')
-    : `<div class="al al-w" style="font-size:13px">⚠️ Pas assez de filles (${nF}) pour des équipes de 3 à 7.</div>`;
-
-  updateSepComposeArea(nG, nF);
-}
-
-window.selectSex = (gender, nTeams) => {
-  if (!selectedSepCombo) selectedSepCombo = { nTeamsG: null, nTeamsF: null };
-  if (gender === 'G') selectedSepCombo.nTeamsG = nTeams;
-  else                selectedSepCombo.nTeamsF = nTeams;
-
-  const pr = curEleves().filter(e => !e.abs);
-  const nG = pr.filter(e => e.sx === 'G').length;
-  const nF = pr.filter(e => e.sx === 'F').length;
-
-  // Mettre en évidence les boutons de la colonne concernée
-  document.querySelectorAll(`button[data-gender="${gender}"]`).forEach(btn => {
-    const n   = parseInt(btn.dataset.n);
-    const sel = n === nTeams;
-    const color = gender === 'G' ? 'var(--boy)' : 'var(--girl)';
-    const bgSel = gender === 'G' ? '#e8f0fe' : '#fce4ec';
-    btn.style.borderColor = sel ? color : 'var(--border)';
-    btn.style.background  = sel ? bgSel : '#fff';
-    btn.style.color       = sel ? color : 'var(--text)';
-    btn.style.fontWeight  = sel ? '700' : '600';
-  });
-
-  // Badge de confirmation sur le titre
-  const badge = gender === 'G' ? G('sel-boys-badge') : G('sel-girls-badge');
-  badge.textContent = `✓ ${nTeams} éq.`;
-  badge.style.display = 'inline-block';
-
-  updateSepComposeArea(nG, nF);
-};
-
-function updateSepComposeArea(nG, nF) {
-  const selG = selectedSepCombo?.nTeamsG;
-  const selF = selectedSepCombo?.nTeamsF;
-  const bothSelected = selG && selF;
-
-  G('sep-hint').style.display         = bothSelected ? 'none' : 'block';
-  G('sep-compose-wrap').style.display = bothSelected ? 'block' : 'none';
-
-  if (!bothSelected) return;
-
-  const bBase = Math.floor(nG/selG), bRem = nG%selG;
-  const fBase = Math.floor(nF/selF), fRem = nF%selF;
-  const bDesc = bRem > 0 ? `${bRem}×${bBase+1} + ${selG-bRem}×${bBase} j.` : `${selG}×${bBase} j.`;
-  const fDesc = fRem > 0 ? `${fRem}×${fBase+1} + ${selF-fRem}×${fBase} j.` : `${selF}×${fBase} j.`;
-
-  G('prev-sep').innerHTML = `<div class="al al-i" style="margin:0">
-    ♂ <strong>${selG} équipes garçons</strong> (${bDesc}) &nbsp;·&nbsp;
-    ♀ <strong>${selF} équipes filles</strong> (${fDesc}) &nbsp;·&nbsp;
-    <strong>${selG+selF} équipes au total</strong>
-  </div>`;
-}
-
-
-window.preview = () => {
-  const pr    = curEleves().filter(e => !e.abs);
-  const neq   = parseInt(G('neq').value) || 2;
-  const total = pr.length;
-  const eqVal = document.querySelector('input[name=eq]:checked')?.value;
-  const mix   = document.querySelector('input[name=mix]:checked')?.value;
-  const simil = eqVal === 'similaire';
-  const isSep = mix === 'sep';
-
-  // Mode séparé : géré par updateSepComposeArea
-  if (isSep) return;
-
-  let modeMsg = '';
-  if (simil) {
-    const nvCount = {1:0,2:0,3:0,4:0,5:0};
-    pr.forEach(e => nvCount[e.nv] = (nvCount[e.nv]||0) + 1);
-    const nvInfo = [1,2,3,4,5]
-      .filter(n => nvCount[n] > 0)
-      .map(n => `${'★'.repeat(n)} Niv.${n}: <strong>${nvCount[n]}</strong>`)
-      .join(' · ');
-    modeMsg = `<br>★ Mode <strong>Similaires</strong> — ${nvInfo}`;
-  }
-
-  if (total < neq) {
-    G('prev').innerHTML = `<div class="al al-w">⚠️ Pas assez d'élèves présents (${total}) pour ${neq} équipes.</div>`;
-    return;
-  }
-
-  // Calcul de la répartition équilibrée (plus d'extras : tout le monde joue)
-  const base = Math.floor(total / neq);
-  const reste = total % neq;
-  const repartDesc = reste > 0
-    ? `${reste}×${base+1} + ${neq-reste}×${base} joueurs`
-    : `${neq}×${base} joueurs`;
-
-  G('prev').innerHTML = `<div class="al al-i">
-    👁️ <strong>${neq} équipes</strong> · ${total} présents · ${repartDesc} ✓
-    ${modeMsg}
-  </div>`;
-};
-
-// ── COMPOSITION ──────────────────────────────────────
-function snake(pool, teams, n) {
-  let dir = 1, idx = 0;
-  pool.forEach(j => {
-    teams[idx].joueurs.push({...j});
-    if (dir === 1) { if (idx < n-1) idx++; else dir = -1; }
-    else           { if (idx > 0)   idx--; else dir = 1;  }
-  });
-}
-
-// ── MODE SIMILAIRE : regroupe les élèves de même niveau ──────────────
-function distribSimilaire(joueurs, n) {
-  // Trie par niveau (nv=1 meilleur → nv=5 débutant)
-  const sorted = [...joueurs].sort((a, b) => b.nv - a.nv); // nv5=meilleur en premier
-  const teams = Array.from({length: n}, (_, i) => ({ id: i, joueurs: [] }));
-
-  // Répartition en N tranches de taille équitable
-  // En cas de reste (ex: 7 élèves pour 5 équipes → 2 extras),
-  // les extras vont dans les équipes de niveau supérieur (meilleures, index 0 en premier)
-  const total    = sorted.length;
-  const baseSize = Math.floor(total / n);
-  const extras   = total % n; // nombre d'équipes qui auront 1 élève de plus
-  // Les extras vont dans les premières équipes (niveau supérieur = meilleurs élèves)
-  const teamSizes = Array.from({length: n}, (_, i) => baseSize + (i < extras ? 1 : 0));
-
-  let idx = 0;
-  for (let t = 0; t < n; t++) {
-    for (let s = 0; s < teamSizes[t]; s++) {
-      if (idx < sorted.length) {
-        teams[t].joueurs.push({...sorted[idx]});
-        idx++;
-      }
-    }
-  }
-
-  teams.forEach(t => t.joueurs.forEach((p, i) => p.num = i + 1));
-  return teams;
-}
-
-function distrib(joueurs, n, bal) {
-  const teams = Array.from({length:n}, (_,i) => ({id:i, joueurs:[]}));
-  if (!joueurs.length) return teams;
-  let pool = [...joueurs];
-
-  if (bal) {
-    // Groupe par niveau décroissant (nv=5=meilleur en premier), mélange au sein de chaque groupe
-    pool.sort((a,b) => b.nv - a.nv);
-    // Mélange les joueurs de même niveau entre eux
-    let i = 0;
-    while (i < pool.length) {
-      let j = i;
-      while (j < pool.length && pool[j].nv === pool[i].nv) j++;
-      // Fisher-Yates sur le groupe [i, j[
-      for (let k = j - 1; k > i; k--) {
-        const r = i + Math.floor(Math.random() * (k - i + 1));
-        [pool[k], pool[r]] = [pool[r], pool[k]];
-      }
-      i = j;
-    }
-  } else {
-    pool.sort(() => Math.random() - .5);
-  }
-
-  snake(pool, teams, n);
-  teams.forEach(t => {
-    if (bal) t.joueurs.sort((a,b) => b.nv - a.nv); // nv5=meilleur en premier
-    t.joueurs.forEach((p,i) => p.num = i+1);
-  });
-  return teams;
-}
-
-window.compose = async () => {
-  const n      = parseInt(G('neq').value);
-  const mix    = document.querySelector('input[name=mix]:checked').value;
-  const eqVal  = document.querySelector('input[name=eq]:checked').value;
-  const bal    = eqVal === 'oui';
-  const simil  = eqVal === 'similaire';
-  const pr     = curEleves().filter(e => !e.abs);
-
-  if (mix === 'sep') {
-    // ── MODE SÉPARÉ : n équipes garçons ET m équipes filles (genres jamais mélangés) ──
-    if (!selectedSepCombo) { alert('Veuillez choisir une configuration dans le panneau ci-dessus.'); return; }
-    const Gp = pr.filter(e => e.sx === 'G');
-    const Fp = pr.filter(e => e.sx === 'F');
-    const nTeamsG = selectedSepCombo.nTeamsG;
-    const nTeamsF = selectedSepCombo.nTeamsF;
-
-    let tG, tF;
-    if (simil) {
-      tG = distribSimilaire(Gp, nTeamsG);
-      tF = distribSimilaire(Fp, nTeamsF);
-    } else {
-      tG = distrib(Gp, nTeamsG, bal);
-      tF = distrib(Fp, nTeamsF, bal);
-    }
-
-    EQ = [
-      ...tG.map((t, i) => ({ id: i,          genre: 'G', joueurs: t.joueurs })),
-      ...tF.map((t, i) => ({ id: nTeamsG + i, genre: 'F', joueurs: t.joueurs }))
-    ];
-
-    if (simil) {
-      EQ.forEach(eq => {
-        const nvs = eq.joueurs.map(p => p.nv);
-        eq.nvMin = nvs.length ? Math.min(...nvs) : '-';
-        eq.nvMax = nvs.length ? Math.max(...nvs) : '-';
-        eq.nvAvg = nvs.length ? (nvs.reduce((a,b) => a+b, 0) / nvs.length).toFixed(1) : '-';
-      });
-    }
-
-  } else if (simil) {
-    // ── MODE SIMILAIRE MIXTE ──
-    if (pr.length < n) { alert(`Pas assez d'élèves présents (${pr.length}) pour ${n} équipes.`); return; }
-    const teams = distribSimilaire(pr, n);
-    EQ = teams.map(t => ({ id: t.id, joueurs: t.joueurs }));
-    EQ.forEach(eq => {
-      const nvs = eq.joueurs.map(p => p.nv);
-      eq.nvMin = nvs.length ? Math.min(...nvs) : '-';
-      eq.nvMax = nvs.length ? Math.max(...nvs) : '-';
-      eq.nvAvg = nvs.length ? (nvs.reduce((a,b) => a+b, 0) / nvs.length).toFixed(1) : '-';
-    });
-
-  } else {
-    // ── MODE MIXTE : distribution alternée G/F ──
-    if (pr.length < n) { alert(`Pas assez d'élèves présents (${pr.length}) pour ${n} équipes.`); return; }
-    const Gp = pr.filter(e => e.sx === 'G');
-    const Fp = pr.filter(e => e.sx === 'F');
-
-    const boysTeams  = distrib(Gp, n, bal);
-    const girlsTeams = distrib(Fp, n, bal);
-    const moreBoysGlobally = Gp.length >= Fp.length;
-
-    EQ = Array.from({length:n}, (_,i) => {
-      const boys  = boysTeams[i].joueurs;
-      const girls = girlsTeams[i].joueurs;
-      const first  = moreBoysGlobally ? boys  : girls;
-      const second = moreBoysGlobally ? girls : boys;
-      const merged = [];
-      const maxLen = Math.max(first.length, second.length);
-      for (let k = 0; k < maxLen; k++) {
-        if (k < first.length)  merged.push(first[k]);
-        if (k < second.length) merged.push(second[k]);
-      }
-      merged.forEach((p, idx) => p.num = idx + 1);
-      return { id: i, joueurs: merged };
-    });
-  }
-
-  if (!currentSport) { alert('Veuillez d\'abord créer et sélectionner une APSA.'); return; }
-  const sportLabel = savedSports[currentSport]?.label || currentSport;
-
-  G('b-eq').textContent = EQ.length;
-
-  // Sauvegarde les équipes dans Firebase par APSA
-  const eqToSave = EQ.map((t, i) => ({
-    id: t.id, genre: t.genre || null, color: teamColors[i] || null,
-    joueurs: t.joueurs.map(p => ({
-      id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num, opts: p.opts || []
-    }))
-  }));
-  const sportData = {
-    sport: currentSport,
-    label: sportLabel,
-    data: eqToSave,
-    neq: parseInt(G('neq').value),
-    njoueurs: parseInt(G('njoueurs').value),
-    mix: document.querySelector('input[name=mix]:checked').value,
-    bal: eqVal,
-    simil: simil,
-    savedAt: Date.now()
-  };
-  await set(ref(db, `users/${uid}/classes/${currentClassId}/equipes_sport/${currentSport}`), sportData);
-  savedSports[currentSport] = sportData;
-
-  updateEqBadge();
-  renderApsaChips();
-  teamColors = {};
-  renderEQ();
-  showTab('equipes');
-};
-
-function renderEQ() {
-  if (!EQ.length) return;
-  const pr     = curEleves().filter(e => !e.abs).length;
-  const clsNom = classes[currentClassId]?.nom || '';
-  const isSep  = EQ.some(t => t.genre);
-  const isSimil = savedSports[currentSport]?.simil ||
-    document.querySelector('input[name=eq]:checked')?.value === 'similaire';
-  const sportLabel = currentSport ? (savedSports[currentSport]?.label || currentSport) : '';
-
-  renderSportTabs();
-
-  let html = `
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
-      <div class="al al-i" style="flex:1;margin:0">
-        📚 <strong>${clsNom}</strong> · ${sportLabel ? `<strong>${sportLabel}</strong> · ` : ''}✅ ${pr} présents · ${EQ.length} équipes
-        ${isSep ? '· ♂ + ♀ séparés' : ''}
-      </div>
-      <button class="btn btn-sm" style="background:var(--yellow);color:#333" onclick="compose()">🔀 Recomposer</button>
-      <button class="btn btn-sm" style="background:#1d6f42;color:#fff" onclick="exportExcel()">📊 Exporter Excel</button>
-      <button class="btn btn-sm btn-b" onclick="window.print()">🖨️ Imprimer</button>
-    </div>`;
-
-  const OPT_LABELS_SHORT = { lca: 'LCA', lce: 'LCE', all: 'All', esp: 'Esp' };
-  const rowJ = (j, teamIdx) => {
-    const optBadges = (j.opts||[]).map(o=>`<span class="opt-badge ${o}">${OPT_LABELS_SHORT[o]||o}</span>`).join('');
-    return `
-    <div class="pr"
-      draggable="true"
-      data-player-id="${j.id}"
-      data-team-idx="${teamIdx}"
-      style="background:${j.sx==='G'?'#e8f0fe':'#fce4ec'}"
-      ondragstart="dragStart(event)"
-      ondragend="dragEnd(event)"
-      ondragover="dragOverPlayer(event)"
-      ondragleave="dragLeavePlayer(event)"
-      ondrop="dropOnPlayer(event)">
-      <div class="pnum">${j.num}</div>
-      <div class="pname" style="flex:1">${j.nom}${optBadges?`<div style="margin-top:2px">${optBadges}</div>`:''}</div>
-      <span style="font-size:18px;font-weight:900;color:${j.sx==='G'?'var(--boy)':'var(--girl)'}">${j.sx==='G'?'♂\uFE0E':'♀\uFE0E'}</span>
-    </div>`; };
-
-  const renderTeamCard = (team, numLabel, col, teamIdx) => {
-    const avg = team.joueurs.length
-      ? (team.joueurs.reduce((s,p) => s+p.nv,0) / team.joueurs.length).toFixed(1)
-      : '-';
-    const nvBadge = isSimil && team.joueurs.length
-      ? (() => {
-          const nvs = team.joueurs.map(p => p.nv);
-          const nvMin = Math.min(...nvs), nvMax = Math.max(...nvs);
-          return nvMin === nvMax
-            ? `Niv.${nvMin} ${'★'.repeat(nvMin)}`
-            : `Niv.${nvMin}-${nvMax}`;
-        })()
-      : null;
-    const color = teamColors[teamIdx] || col;
-    return `<div class="tc" data-team-idx="${teamIdx}">
-      <div class="th" style="background:${color}">
-        <span>${numLabel}</span>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span class="eq-avg-badge" id="eq-avg-${teamIdx}" style="font-size:12px;opacity:.9">${nvBadge ? `★ ${nvBadge}` : `⭐${avg}`} · ${team.joueurs.length}j</span>
-          <label title="Changer la couleur" style="cursor:pointer;font-size:15px;opacity:.75;line-height:1;position:relative" onclick="event.stopPropagation()">
-            🎨
-            <input type="color" value="${color}" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none"
-              oninput="changeTeamColor(${teamIdx}, this.value)"
-              onchange="changeTeamColor(${teamIdx}, this.value)"
-              onclick="event.stopPropagation()">
-          </label>
-        </div>
-      </div>
-      <div class="tbody"
-        data-team-idx="${teamIdx}"
-        ondragover="dragOverTeam(event)"
-        ondragleave="dragLeaveTeam(event)"
-        ondrop="dropOnTeam(event)">${team.joueurs.map(j => rowJ(j, teamIdx)).join('')}</div>
-    </div>`;
-  };
-
-  if (isSep) {
-    // Affiche section garçons puis section filles
-    const boysTeams  = EQ.filter(t => t.genre === 'G');
-    const girlsTeams = EQ.filter(t => t.genre === 'F');
-
-    html += `<div style="font-weight:700;color:var(--boy);font-size:15px;margin:8px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--boy)">♂ Équipes Garçons</div>`;
-    html += `<div class="tgrid">`;
-    boysTeams.forEach((team, i) => {
-      html += renderTeamCard(team, `Équipe ♂ ${i+1}`, COL[i % COL.length], EQ.indexOf(team));
-    });
-    html += `</div>`;
-
-    html += `<div style="font-weight:700;color:var(--girl);font-size:15px;margin:20px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--girl)">♀ Équipes Filles</div>`;
-    html += `<div class="tgrid">`;
-    girlsTeams.forEach((team, i) => {
-      html += renderTeamCard(team, `Équipe ♀ ${i+1}`, COL[(i + boysTeams.length) % COL.length], EQ.indexOf(team));
-    });
-    html += `</div>`;
-
-  } else {
-    html += `<div class="tgrid">`;
-    EQ.forEach((team, i) => {
-      html += renderTeamCard(team, `Équipe ${i+1}`, COL[i % COL.length], i);
-    });
-    html += `</div>`;
-  }
-
-  G('eqcontent').innerHTML = html;
-}
-
-// ── IMPORT CSV / EXCEL ───────────────────────────────
-let importRows = []; // lignes validées prêtes à importer
-
-window.openImport = () => {
-  importRows = [];
-  G('import-preview').style.display = 'none';
-  G('btn-import-confirm').style.display = 'none';
-  G('file-inp').value = '';
-  G('drop-zone').style.borderColor = 'var(--border)';
-  G('drop-zone').style.background = '';
-  G('modal-import').classList.add('open');
-};
-window.closeImport = () => G('modal-import').classList.remove('open');
-
-window.handleDrop = e => {
-  e.preventDefault();
-  G('drop-zone').style.borderColor = 'var(--border)';
-  G('drop-zone').style.background = '';
-  const file = e.dataTransfer.files[0];
-  if (file) handleFile(file);
-};
-
-window.handleFile = file => {
-  if (!file) return;
-  const ext = file.name.split('.').pop().toLowerCase();
-  if (['xlsx','xls'].includes(ext)) {
-    parseExcel(file);
-  } else {
-    parseCsv(file);
-  }
-};
-
-function parseExcel(file) {
-  // Charge SheetJS dynamiquement
-  const script = document.createElement('script');
-  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-  script.onload = () => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const wb = XLSX.read(e.target.result, {type:'array'});
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const data = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
-      processLines(data.map(row => row.map(c => String(c).trim())));
-    };
-    reader.readAsArrayBuffer(file);
-  };
-  document.head.appendChild(script);
-}
-
-function normSexe(val) {
-  if (!val) return null;
-  // Nettoie les artefacts d'encodage (ex: "F\xe9minin" → on garde juste la 1ère lettre si besoin)
-  const v = val.trim().toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // retire accents propres
-    .replace(/[^\x00-\x7F]/g, '')                     // retire caractères non-ASCII (artefacts)
-    .trim();
-  if (!v) return null;
-  if (['g','m','h','garcon','masculin','boy','male','homme'].includes(v)) return 'G';
-  if (['f','fille','feminin','feminine','girl','female','femme'].includes(v)) return 'F';
-  // Fallback : première lettre seulement
-  if (v[0] === 'g' || v[0] === 'm' || v[0] === 'h') return 'G';
-  if (v[0] === 'f') return 'F';
-  return null;
-}
-
-function parseCsv(file) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    const text = e.target.result;
-    const lines = text.split(/\r?\n/).filter(l => l.trim());
-    processLines(lines.map(l => {
-      const sep = l.includes(';') ? ';' : l.includes('\t') ? '\t' : ',';
-      return l.split(sep).map(c => c.trim().replace(/^["']|["']$/g, ''));
-    }));
-  };
-  // Essaie d'abord Latin-1 (encodage ProNote/Ecole Directe France)
-  reader.readAsText(file, 'ISO-8859-1');
-}
-
-function processLines(rows) {
-  if (!rows.length) return;
-  const valid = [], errors = [];
-
-  // Ignore la 1ère ligne si c'est un en-tête (colonne 3 pas un sexe connu)
-  let start = 0;
-  const firstRow = rows[0];
-  if (firstRow.length >= 1 && normSexe(firstRow[2] || firstRow[1] || '') === null) start = 1;
-
-  rows.slice(start).forEach((cols, i) => {
-    const lineNum = start + i + 1;
-    // Filtre les lignes vides
-    if (!cols || cols.every(c => !c.trim())) return;
-
-    let nom, sx;
-
-    if (cols.length >= 3) {
-      // Format : NOM | Prénom | Sexe  (export pronote/ecole directe)
-      const nomFamille = (cols[0] || '').trim();
-      const prenom     = (cols[1] || '').trim();
-      nom = prenom && nomFamille ? `${prenom} ${nomFamille}` : (nomFamille || prenom);
-      sx  = normSexe(cols[2] || '');
-    } else if (cols.length === 2) {
-      // Format : Prénom Nom | Sexe
-      nom = (cols[0] || '').trim();
-      sx  = normSexe(cols[1] || '');
-    } else {
-      errors.push(`Ligne ${lineNum} : pas assez de colonnes`); return;
-    }
-
-    if (!nom) { errors.push(`Ligne ${lineNum} : nom vide`); return; }
-    if (!sx)  { errors.push(`Ligne ${lineNum} : sexe invalide ("${cols[cols.length-1]}")`); return; }
-
-    // Niveau par défaut 3 — sera défini manuellement dans l'appli
-    valid.push({ nom, sx, nv: 3 });
-  });
-
-  importRows = valid;
-
-  G('import-preview').style.display = 'block';
-  G('import-preview-title').innerHTML =
-    `<span style="color:var(--green)">✅ ${valid.length} élève(s) prêt(s) à importer</span>` +
-    (errors.length ? ` · <span style="color:var(--red)">${errors.length} ligne(s) ignorée(s)</span>` : '') +
-    `<span style="color:var(--muted);font-weight:400;font-size:12px;margin-left:8px">— Niveau 3 par défaut, à ajuster dans l'appli</span>`;
-
-  const thead = `<tr style="position:sticky;top:0;background:var(--bg)">
-    <th style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--muted);text-align:left">#</th>
-    <th style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--muted);text-align:left">NOM COMPLET</th>
-    <th style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--muted);text-align:left">SEXE</th>
-  </tr>`;
-  const tbody = valid.map((e, i) => `<tr style="border-bottom:1px solid var(--border)">
-    <td style="padding:7px 12px;font-size:12px;color:var(--muted)">${i+1}</td>
-    <td style="padding:7px 12px;font-size:13px;font-weight:600">${e.nom}</td>
-    <td style="padding:7px 12px;font-size:13px">${e.sx === 'G' ? '<span style="color:var(--boy)">♂ Garçon</span>' : '<span style="color:var(--girl)">♀ Fille</span>'}</td>
-  </tr>`).join('');
-  G('import-table').innerHTML = thead + tbody;
-
-  G('import-errors').innerHTML = errors.map(e => `⚠️ ${e}`).join('<br>');
-  G('btn-import-confirm').style.display = valid.length ? 'inline-flex' : 'none';
-}
-
-window.confirmImport = async () => {
-  if (!importRows.length || !currentClassId) return;
-  G('btn-import-confirm').textContent = '⏳ Import en cours…';
-  G('btn-import-confirm').disabled = true;
-
-  const updates = {};
-  importRows.forEach(e => {
-    const key = push(ref(db, `users/${uid}/classes/${currentClassId}/eleves`)).key;
-    updates[`users/${uid}/classes/${currentClassId}/eleves/${key}`] = {
-      nom: e.nom, sx: e.sx, nv: e.nv, abs: false
-    };
-  });
-  await update(ref(db), updates);
-
-  G('btn-import-confirm').textContent = '✅ Importer les élèves';
-  G('btn-import-confirm').disabled = false;
-  closeImport();
-};
-// ── COULEURS ÉQUIPES ─────────────────────────────────
-window.changeTeamColor = (teamIdx, color) => {
-  teamColors[teamIdx] = color;
-  // Mise à jour directe de l'en-tête sans re-render complet
-  const th = document.querySelector(`.tc[data-team-idx="${teamIdx}"] .th`);
-  if (th) th.style.background = color;
-  // Sauvegarde dans Firebase
-  if (currentSport && uid && currentClassId) {
-    const eqToSave = EQ.map((t, i) => ({
-      id: t.id, genre: t.genre || null, color: teamColors[i] || null,
-      joueurs: t.joueurs.map(p => ({ id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num, opts: p.opts || [] }))
-    }));
-    const sportData = { ...(savedSports[currentSport] || {}), data: eqToSave, savedAt: Date.now() };
-    savedSports[currentSport] = sportData;
-    import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js").then(({ ref: fbRef, set: fbSet }) => {
-      fbSet(fbRef(db, `users/${uid}/classes/${currentClassId}/equipes_sport/${currentSport}`), sportData);
-    }).catch(() => {});
-  }
-};
-
-// ── DRAG & DROP ÉQUIPES ──────────────────────────────
-let dragState = null; // { playerId, fromTeamIdx }
-
-function clearDragVisuals() {
-  document.querySelectorAll('.insert-above,.insert-below').forEach(el => {
-    el.classList.remove('insert-above','insert-below');
-  });
-  document.querySelectorAll('.drop-target-empty').forEach(el => el.classList.remove('drop-target-empty'));
-}
-
-window.dragStart = (e) => {
-  const el = e.currentTarget;
-  dragState = {
-    playerId: el.dataset.playerId,
-    fromTeamIdx: parseInt(el.dataset.teamIdx)
-  };
-  el.classList.add('dragging');
-  e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setData('text/plain', '');
-};
-
-window.dragEnd = (e) => {
-  e.currentTarget.classList.remove('dragging');
-  clearDragVisuals();
-  dragState = null;
-};
-
-// Called on each .pr (player row)
-window.dragOverPlayer = (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  e.dataTransfer.dropEffect = 'move';
-  const el = e.currentTarget;
-  if (!dragState || dragState.playerId === el.dataset.playerId) return;
-  clearDragVisuals();
-  // Show insert line above or below based on cursor position
-  const rect = el.getBoundingClientRect();
-  const mid  = rect.top + rect.height / 2;
-  if (e.clientY < mid) {
-    el.classList.add('insert-above');
-  } else {
-    el.classList.add('insert-below');
-  }
-};
-
-window.dragLeavePlayer = (e) => {
-  if (!e.currentTarget.contains(e.relatedTarget)) {
-    e.currentTarget.classList.remove('insert-above','insert-below');
-  }
-};
-
-// Called on .tbody (team body), only fires when NOT over a child .pr
-window.dragOverTeam = (e) => {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-  clearDragVisuals();
-  e.currentTarget.classList.add('drop-target-empty');
-};
-
-window.dragLeaveTeam = (e) => {
-  if (!e.currentTarget.contains(e.relatedTarget)) {
-    e.currentTarget.classList.remove('drop-target-empty');
-  }
-};
-
-window.dropOnPlayer = (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  if (!dragState) return;
-  const targetEl = e.currentTarget;
-  if (dragState.playerId === targetEl.dataset.playerId) return;
-
-  const toTeamIdx     = parseInt(targetEl.dataset.teamIdx);
-  const targetPlayerId = targetEl.dataset.playerId;
-
-  // Determine insert position (above or below)
-  const rect = targetEl.getBoundingClientRect();
-  const insertBefore = e.clientY < rect.top + rect.height / 2;
-
-  clearDragVisuals();
-  movePlayer(dragState.playerId, dragState.fromTeamIdx, toTeamIdx, targetPlayerId, insertBefore);
-};
-
-window.dropOnTeam = (e) => {
-  e.preventDefault();
-  if (!dragState) return;
-  // Only fires when dropped on empty space of tbody (not on a .pr)
-  const toTeamIdx = parseInt(e.currentTarget.dataset.teamIdx);
-  clearDragVisuals();
-  movePlayer(dragState.playerId, dragState.fromTeamIdx, toTeamIdx, null, false);
-};
-
-// insertBeforeTarget: insert before or after the target player (null target = append)
-function movePlayer(playerId, fromTeamIdx, toTeamIdx, targetPlayerId, insertBefore) {
-  const fromTeam = EQ[fromTeamIdx];
-  const toTeam   = EQ[toTeamIdx];
-  if (!fromTeam || !toTeam) return;
-
-  const playerIdx = fromTeam.joueurs.findIndex(p => p.id === playerId);
-  if (playerIdx === -1) return;
-  const [player] = fromTeam.joueurs.splice(playerIdx, 1);
-
-  if (targetPlayerId) {
-    // Find target position in toTeam (after the splice above, in case same team)
-    let targetIdx = toTeam.joueurs.findIndex(p => p.id === targetPlayerId);
-    if (targetIdx === -1) {
-      toTeam.joueurs.push(player); // fallback
-    } else {
-      const insertAt = insertBefore ? targetIdx : targetIdx + 1;
-      toTeam.joueurs.splice(insertAt, 0, player);
-    }
-  } else {
-    toTeam.joueurs.push(player);
-  }
-
-  // Renumber both teams
-  fromTeam.joueurs.forEach((p, i) => p.num = i + 1);
-  if (fromTeamIdx !== toTeamIdx) toTeam.joueurs.forEach((p, i) => p.num = i + 1);
-
-  renderEQ();
-
-  // Save to Firebase
-  if (currentSport && uid && currentClassId) {
-    const eqToSave = EQ.map((t, i) => ({
-      id: t.id, genre: t.genre || null, color: teamColors[i] || null,
-      joueurs: t.joueurs.map(p => ({ id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num, opts: p.opts || [] }))
-    }));
-    const sportData = { ...(savedSports[currentSport] || {}), data: eqToSave, savedAt: Date.now() };
-    savedSports[currentSport] = sportData;
-    import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js").then(({ ref: fbRef, set: fbSet }) => {
-      fbSet(fbRef(db, `users/${uid}/classes/${currentClassId}/equipes_sport/${currentSport}`), sportData);
-    }).catch(() => {});
-  }
-}
-
-// ── EXPORT EXCEL ─────────────────────────────────────────────────────
-window.exportExcel = () => {
-  if (!EQ.length) return;
-
-  // Charge SheetJS si pas encore disponible
-  const doExport = () => {
-    const njou    = parseInt(G('njoueurs').value) || 5;
-    const clsNom  = classes[currentClassId]?.nom || 'Equipes';
-    const eqVal   = document.querySelector('input[name=eq]:checked')?.value;
-    const modeLib = eqVal === 'similaire' ? 'Similaires' : eqVal === 'oui' ? 'Equilibrees' : 'Aleatoire';
-
-    // Construction du tableau : une colonne par équipe
-    const maxRows = Math.max(...EQ.map(t => t.joueurs.length));
-    const wb = XLSX.utils.book_new();
-    const wsData = [];
-
-    // Ligne 1 : en-têtes équipes
-    const headerRow = [];
-    EQ.forEach((team, i) => {
-      const avg = team.joueurs.length
-        ? (team.joueurs.reduce((s,p) => s+p.nv,0) / team.joueurs.length).toFixed(1)
-        : '-';
-      headerRow.push(`Equipe ${i+1} (moy. ${avg}★)`);
-      headerRow.push('Niv.'); // colonne niveau
-      headerRow.push('');     // colonne vide séparatrice
-    });
-    wsData.push(headerRow);
-
-    // Ligne 2 : sous-en-têtes
-    const subRow = [];
-    EQ.forEach(() => { subRow.push('Joueur'); subRow.push('★'); subRow.push(''); });
-    wsData.push(subRow);
-
-    // Lignes joueurs
-    for (let r = 0; r < maxRows; r++) {
-      const row = [];
-      EQ.forEach(team => {
-        const j = team.joueurs[r];
-        if (j) {
-          const stars = '★'.repeat(j.nv) + '☆'.repeat(5 - j.nv);
-          row.push(`${j.num}. ${j.nom}`);
-          row.push(stars);
-        } else {
-          row.push(''); row.push('');
-        }
-        // Séparateur extra
-        const extras = team.joueurs.slice(njou);
-        if (r === njou - 1 && extras.length > 0) {
-          row.push('--- Extra ---');
-        } else {
-          row.push('');
-        }
-      });
-      wsData.push(row);
-    }
-
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-    // Largeurs de colonnes
-    const colWidths = [];
-    EQ.forEach(() => {
-      colWidths.push({ wch: 28 }); // nom joueur
-      colWidths.push({ wch: 8 });  // niveau étoiles
-      colWidths.push({ wch: 4 });  // séparateur
-    });
-    ws['!cols'] = colWidths;
-
-    XLSX.utils.book_append_sheet(wb, ws, 'Equipes');
-
-    // Feuille récap par élève
-    const recapData = [['Nom', 'Sexe', 'Niveau', 'Equipe']];
-    EQ.forEach((team, i) => {
-      team.joueurs.forEach(j => {
-        recapData.push([
-          j.nom,
-          j.sx === 'G' ? 'Garçon' : 'Fille',
-          j.nv,
-          `Equipe ${i + 1}`
-        ]);
-      });
-    });
-    const wsRecap = XLSX.utils.aoa_to_sheet(recapData);
-    wsRecap['!cols'] = [{ wch: 30 }, { wch: 10 }, { wch: 8 }, { wch: 12 }];
-    XLSX.utils.book_append_sheet(wb, wsRecap, 'Liste élèves');
-
-    // Téléchargement
-    const date = new Date().toISOString().slice(0,10);
-    XLSX.writeFile(wb, `${clsNom}_${modeLib}_${date}.xlsx`);
-  };
-
-  if (typeof XLSX !== 'undefined') {
-    doExport();
-  } else {
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-    script.onload = doExport;
-    document.head.appendChild(script);
-  }
-};
-
-// ════════════════════════════════════════════════════
-// ── ÉVALUATION ──────────────────────────────────────
-// ════════════════════════════════════════════════════
-
-// ── Helpers UI ─────────────────────────────────────
-window.updateEvalAddBtn = () => {
-  const v = G('eval-grid-input').value.trim();
-  const btn = G('eval-grid-add-btn');
-  btn.disabled = !v;
-  btn.style.opacity = v ? '1' : '.5';
-  btn.style.cursor  = v ? 'pointer' : 'default';
-};
-
-// ── Grilles ────────────────────────────────────────
-window.addEvalGrid = async () => {
-  const label = G('eval-grid-input').value.trim();
-  if (!label || !currentClassId) return;
-  const key = 'g_' + slugify(label) + '_' + Date.now();
-  const grid = { label, criteres: [], notes: {} };
-  evalGrids[key] = grid;
-  currentGrid = key;
-  await set(ref(db, `users/${uid}/classes/${currentClassId}/eval/${key}`), grid);
-  G('eval-grid-input').value = '';
-  updateEvalAddBtn();
-  renderEvalGridTabs();
-  renderEvalContent();
-};
-
-window.selectEvalGrid = key => {
-  currentGrid = key;
-  renderEvalGridTabs();
-  renderEvalContent();
-};
-
-window.deleteEvalGrid = async key => {
-  const g = evalGrids[key];
-  if (!confirm(`Supprimer la grille "${g?.label || key}" et toutes les notes ?`)) return;
-  await remove(ref(db, `users/${uid}/classes/${currentClassId}/eval/${key}`));
-  delete evalGrids[key];
-  if (currentGrid === key) {
-    currentGrid = Object.keys(evalGrids)[0] || null;
-  }
-  renderEvalGridTabs();
-  renderEvalContent();
-};
-
-function renderEvalGridTabs() {
-  const keys = Object.keys(evalGrids);
-  G('eval-grid-tabs').innerHTML = keys.map(key => {
-    const g = evalGrids[key];
-    const isSel = currentGrid === key;
-    return `<div style="display:inline-flex;align-items:center;
-              border:2.5px solid ${isSel ? 'var(--primary)' : 'var(--border)'};
-              border-radius:20px;background:${isSel ? 'var(--primary)' : '#fff'};
-              overflow:hidden;transition:all .15s">
-      <button onclick="selectEvalGrid('${key}')"
-        style="padding:6px 12px;border:none;background:none;
-               color:${isSel ? '#fff' : 'var(--text)'};
-               cursor:pointer;font-size:13px;font-weight:700">
-        ${g.label}
-      </button>
-      <button onclick="deleteEvalGrid('${key}')" title="Supprimer"
-        style="padding:5px 9px;border:none;border-left:2px solid ${isSel ? 'rgba(255,255,255,.3)' : 'var(--border)'};
-               background:none;color:${isSel ? 'rgba(255,255,255,.75)' : 'var(--muted)'};
-               cursor:pointer;font-size:14px;font-weight:700">×</button>
-    </div>`;
-  }).join('');
-}
-
-// ── Critères ────────────────────────────────────────
-window.openCritereModal = (id = null) => {
-  editCritereId = id;
-  G('modal-critere-title').textContent = id ? '✏️ Modifier le critère' : '➕ Ajouter un critère';
-  if (id) {
-    const c = evalGrids[currentGrid].criteres.find(c => c.id === id);
-    G('critere-nom').value = c.nom;
-    G('critere-max').value = c.max;
-  } else {
-    G('critere-nom').value = '';
-    G('critere-max').value = '5';
-  }
-  G('modal-critere').classList.add('open');
-  setTimeout(() => G('critere-nom').focus(), 80);
-};
-window.closeCritereModal = () => { G('modal-critere').classList.remove('open'); editCritereId = null; };
-
-window.saveCritere = async () => {
-  const nom = G('critere-nom').value.trim();
-  const max = Math.max(1, parseInt(G('critere-max').value) || 5);
-  if (!nom || !currentGrid) return;
-
-  const grid = evalGrids[currentGrid];
-  if (editCritereId) {
-    const c = grid.criteres.find(c => c.id === editCritereId);
-    if (c) { c.nom = nom; c.max = max; }
-  } else {
-    grid.criteres.push({ id: 'c' + Date.now(), nom, max });
-  }
-  await set(ref(db, `users/${uid}/classes/${currentClassId}/eval/${currentGrid}/criteres`), grid.criteres);
-  closeCritereModal();
-  renderEvalContent();
-};
-
-window.deleteCritere = async id => {
-  const grid = evalGrids[currentGrid];
-  grid.criteres = grid.criteres.filter(c => c.id !== id);
-  // Supprimer aussi les notes liées à ce critère
-  Object.keys(grid.notes || {}).forEach(eid => { if (grid.notes[eid]) delete grid.notes[eid][id]; });
-  await update(ref(db, `users/${uid}/classes/${currentClassId}/eval/${currentGrid}`), {
-    criteres: grid.criteres, notes: grid.notes || {}
-  });
-  renderEvalContent();
-};
-
-window.moveCritere = async (id, dir) => {
-  const grid = evalGrids[currentGrid];
-  const idx = grid.criteres.findIndex(c => c.id === id);
-  const newIdx = idx + dir;
-  if (newIdx < 0 || newIdx >= grid.criteres.length) return;
-  [grid.criteres[idx], grid.criteres[newIdx]] = [grid.criteres[newIdx], grid.criteres[idx]];
-  await set(ref(db, `users/${uid}/classes/${currentClassId}/eval/${currentGrid}/criteres`), grid.criteres);
-  renderEvalContent();
-};
-
-// ── Notes ──────────────────────────────────────────
-window.setNote = async (eleveId, critereId, val, max) => {
-  const numVal = Math.min(max, Math.max(0, parseFloat(val) || 0));
-  // Met à jour input si valeur a été corrigée
-  const inp = document.getElementById(`n_${eleveId}_${critereId}`);
-  if (inp && parseFloat(inp.value) !== numVal) inp.value = numVal;
-
-  const grid = evalGrids[currentGrid];
-  if (!grid.notes) grid.notes = {};
-  if (!grid.notes[eleveId]) grid.notes[eleveId] = {};
-  grid.notes[eleveId][critereId] = numVal;
-
-  await set(ref(db, `users/${uid}/classes/${currentClassId}/eval/${currentGrid}/notes/${eleveId}/${critereId}`), numVal);
-  // Met à jour la ligne totale dans le DOM sans re-render
-  updateEleveTotal(eleveId);
-};
-
-function getTotal(eleveId) {
-  const grid = evalGrids[currentGrid];
-  if (!grid?.criteres?.length) return { total: 0, maxTotal: 0 };
-  const notes = grid.notes?.[eleveId] || {};
-  let total = 0, maxTotal = 0;
-  grid.criteres.forEach(c => { total += parseFloat(notes[c.id] || 0); maxTotal += c.max; });
-  return { total: Math.round(total * 100) / 100, maxTotal };
-}
-
-function updateEleveTotal(eleveId) {
-  const { total, maxTotal } = getTotal(eleveId);
-  const el = document.getElementById(`tot_${eleveId}`);
-  if (!el) return;
-  const note20 = maxTotal ? Math.round(total / maxTotal * 20 * 100) / 100 : 0;
-  const pct = maxTotal ? total / maxTotal : 0;
-  const col = pct >= 0.7 ? '#43a047' : pct >= 0.5 ? '#fb8c00' : '#ea4335';
-  el.innerHTML = `<span style="font-weight:800;font-size:15px;color:${col}">${total}/${maxTotal}</span>
-    <span style="font-size:12px;color:var(--muted);margin-left:6px">= <strong style="color:${col}">${note20}/20</strong></span>`;
-}
-
-// ── Render principal ───────────────────────────────
-function renderEvalContent() {
-  if (!currentGrid || !evalGrids[currentGrid]) {
-    G('eval-content').innerHTML = '<div class="empty"><div class="em">📝</div><p>Créez une grille d\'évaluation ci-dessus<br>pour commencer à noter vos élèves.</p></div>';
-    return;
-  }
-
-  const grid   = evalGrids[currentGrid];
-  const eleves = curEleves().filter(e => !e.abs).sort((a,b) => a.nom.localeCompare(b.nom));
-  const total  = grid.criteres.reduce((s, c) => s + c.max, 0);
-
-  // ─ Bandeau info + actions ─
-  let html = `<div class="card" style="margin-bottom:16px">
-    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-      <div style="flex:1">
-        <div style="font-weight:700;font-size:16px">${grid.label}</div>
-        <div style="font-size:13px;color:var(--muted);margin-top:2px">
-          ${grid.criteres.length} critère${grid.criteres.length!==1?'s':''} · Total sur <strong>${total} pts</strong>
-          ${total !== 20 && total > 0 ? `<span style="color:var(--primary)"> → ramené sur 20</span>` : ''}
-        </div>
-      </div>
-      <button class="btn btn-b btn-sm" onclick="openCritereModal()">➕ Critère</button>
-      <button class="btn btn-sm" style="background:#e8f0fe;color:var(--primary)" onclick="exportEvalExcel()">📊 Exporter</button>
-      <button class="btn btn-sm btn-b" onclick="window.print()">🖨️ Imprimer</button>
-    </div>`;
-
-  // ─ Critères ─
-  if (!grid.criteres.length) {
-    html += `<div class="al al-i">👆 Ajoutez au moins un critère pour commencer à noter.</div>`;
-  } else {
-    html += `<div style="display:flex;flex-wrap:wrap;gap:8px">`;
-    grid.criteres.forEach((c, i) => {
-      html += `<div style="display:flex;align-items:center;gap:6px;background:var(--bg);border-radius:10px;padding:8px 12px;font-size:13px">
-        <span style="font-weight:700">${c.nom}</span>
-        <span style="color:var(--muted)">/${c.max}</span>
-        <button onclick="openCritereModal('${c.id}')" class="ico-btn" style="font-size:13px" title="Modifier">✏️</button>
-        <button onclick="moveCritere('${c.id}',-1)" class="ico-btn" style="font-size:12px" ${i===0?'disabled style="opacity:.3"':''} title="Monter">⬆️</button>
-        <button onclick="moveCritere('${c.id}',1)" class="ico-btn" style="font-size:12px" ${i===grid.criteres.length-1?'disabled style="opacity:.3"':''} title="Descendre">⬇️</button>
-        <button onclick="deleteCritere('${c.id}')" class="ico-btn" style="font-size:13px;color:var(--red)" title="Supprimer">🗑️</button>
-      </div>`;
-    });
-    html += `</div>`;
-  }
   html += `</div>`;
+  G('composer-preview').innerHTML = html;
+};
 
-  // ─ Tableau des notes ─
-  if (grid.criteres.length && eleves.length) {
-    html += `<div class="card" style="padding:0;overflow:hidden">
-      <div style="overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:500px">
-        <thead>
-          <tr style="background:var(--bg)">
-            <th style="padding:12px 16px;text-align:left;font-weight:700;font-size:12px;color:var(--muted);text-transform:uppercase;white-space:nowrap;position:sticky;left:0;background:var(--bg);z-index:1">Élève</th>`;
-    grid.criteres.forEach(c => {
-      html += `<th style="padding:12px 10px;text-align:center;font-weight:700;font-size:12px;color:var(--muted);white-space:nowrap">
-        ${c.nom}<br><span style="font-weight:400">/${c.max}</span>
-      </th>`;
-    });
-    html += `<th style="padding:12px 16px;text-align:center;font-weight:700;font-size:12px;color:var(--muted);white-space:nowrap;min-width:140px">Total</th>
-          </tr>
-        </thead>
-        <tbody>`;
-
-    eleves.forEach((e, ri) => {
-      const { total: tot, maxTotal } = getTotal(e.id);
-      const note20 = maxTotal ? Math.round(tot / maxTotal * 20 * 100) / 100 : 0;
-      const pct = maxTotal ? tot / maxTotal : 0;
-      const col = pct >= 0.7 ? '#43a047' : pct >= 0.5 ? '#fb8c00' : '#ea4335';
-      html += `<tr style="border-top:1px solid var(--border);background:${ri%2===0?'#fff':'#fafafa'}">
-        <td style="padding:10px 16px;font-weight:600;white-space:nowrap;position:sticky;left:0;background:${ri%2===0?'#fff':'#fafafa'};z-index:1">
-          <div style="display:flex;align-items:center;gap:7px">
-            <span style="width:26px;height:26px;border-radius:50%;background:${e.sx==='G'?'var(--boy)':'var(--girl)'};color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${e.sx==='G'?'♂':'♀'}</span>
-            ${e.nom}
-          </div>
-        </td>`;
-      grid.criteres.forEach(c => {
-        const val = grid.notes?.[e.id]?.[c.id] ?? '';
-        html += `<td style="padding:6px 8px;text-align:center">
-          <input type="number" id="n_${e.id}_${c.id}"
-            value="${val}" min="0" max="${c.max}" step="0.5"
-            style="width:64px;text-align:center;border:1.5px solid var(--border);border-radius:6px;padding:6px 4px;font-size:13px;font-weight:600"
-            onchange="setNote('${e.id}','${c.id}',this.value,${c.max})"
-            oninput="setNote('${e.id}','${c.id}',this.value,${c.max})"
-            placeholder="—">
-        </td>`;
-      });
-      html += `<td style="padding:10px 16px;text-align:center" id="tot_${e.id}">
-        <span style="font-weight:800;font-size:15px;color:${col}">${tot}/${maxTotal}</span>
-        <span style="font-size:12px;color:var(--muted);margin-left:6px">= <strong style="color:${col}">${note20}/20</strong></span>
-      </td>
-      </tr>`;
-    });
-
-    html += `</tbody></table></div></div>`;
-  }
-
-  G('eval-content').innerHTML = html;
+function getAllEleves() {
+  return Object.entries(sources).flatMap(([srcId, src]) =>
+    Object.entries(src.eleves||{}).map(([id,e]) => ({id, srcId, srcNom: src.nom, ...e}))
+  );
 }
 
-// ── Export Excel éval ──────────────────────────────
-window.exportEvalExcel = () => {
-  const grid = evalGrids[currentGrid]; if (!grid) return;
-  const eleves = curEleves().filter(e => !e.abs).sort((a,b) => a.nom.localeCompare(b.nom));
-  const clsNom = classes[currentClassId]?.nom || '';
+// ── ALGORITHMES DE COMPOSITION ──
+window.composer = () => {
+  const nb  = parseInt(G('nb-classes').value) || 3;
+  const all = getAllEleves();
+  if (all.length < nb) { alert('Pas assez d\'élèves !'); return; }
 
-  const doExport = () => {
-    const wb = XLSX.utils.book_new();
-    const header = ['Élève', 'Sexe', ...grid.criteres.map(c => `${c.nom} (/${c.max})`), `Total /${grid.criteres.reduce((s,c)=>s+c.max,0)}`, 'Note /20'];
-    const rows = [header];
-    eleves.forEach(e => {
-      const notes = grid.notes?.[e.id] || {};
-      const critVals = grid.criteres.map(c => parseFloat(notes[c.id] || 0));
-      const tot = critVals.reduce((s,v) => s+v, 0);
-      const maxTot = grid.criteres.reduce((s,c) => s+c.max, 0);
-      const note20 = maxTot ? Math.round(tot / maxTot * 20 * 100) / 100 : 0;
-      rows.push([e.nom, e.sx === 'G' ? 'Garçon' : 'Fille', ...critVals, tot, note20]);
+  if (currentMode === 'equilibre') composerEquilibre(all, nb);
+  else if (currentMode === 'options') composerParOptions(all, nb);
+  else composerHybride(all, nb);
+
+  // Nommer les classes
+  const letters = ['A','B','C','D','E','F'];
+  composedClasses = composedClasses.map((c,i) => ({
+    ...c,
+    nom: `5ème ${letters[i]}`,
+    color: CLS_COLORS[i] || '#607d8b'
+  }));
+
+  saveComposed();
+  showTab('classes');
+  renderClasses();
+};
+
+function composerEquilibre(all, nb) {
+  // Trier par niveau desc, puis serpentin
+  const classes = Array.from({length:nb}, () => ({eleves:[]}));
+  const sorted = [...all].sort((a,b) => (b.nv||3)-(a.nv||3));
+
+  // Serpentin : 0,1,2,2,1,0,0,1,2...
+  let dir = 1, idx = 0;
+  sorted.forEach(e => {
+    classes[idx].eleves.push(e);
+    if (dir === 1 && idx === nb-1) dir = -1;
+    else if (dir === -1 && idx === 0) dir = 1;
+    else idx += dir;
+  });
+  composedClasses = classes;
+}
+
+function composerParOptions(all, nb) {
+  const classes = Array.from({length:nb}, () => ({eleves:[]}));
+  const opts = ['LCA','LCE','ALL','ESP','AUCUNE'];
+
+  // Regrouper par option
+  const groups = {};
+  opts.forEach(o => { groups[o] = all.filter(e=>(e.opt||'AUCUNE')===o); });
+
+  // Assigner chaque groupe à des classes (on fait des blocs)
+  let clsIdx = 0;
+  opts.forEach(opt => {
+    const pool = [...groups[opt]].sort((a,b)=>(b.nv||3)-(a.nv||3));
+    pool.forEach(e => {
+      classes[clsIdx % nb].eleves.push(e);
+      clsIdx++;
     });
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols'] = [{ wch: 30 }, { wch: 8 }, ...grid.criteres.map(() => ({ wch: 14 })), { wch: 12 }, { wch: 10 }];
-    XLSX.utils.book_append_sheet(wb, ws, grid.label.slice(0, 31));
-    XLSX.writeFile(wb, `${clsNom}_eval_${grid.label}_${new Date().toISOString().slice(0,10)}.xlsx`);
-  };
+  });
+  composedClasses = classes;
+}
 
-  if (typeof XLSX !== 'undefined') doExport();
-  else {
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-    s.onload = doExport;
-    document.head.appendChild(s);
+function composerHybride(all, nb) {
+  const classes = Array.from({length:nb}, () => ({eleves:[]}));
+
+  // LCA/LCE : options contraintes — on les répartit dans 1-2 classes max
+  // Les autres options : serpentin équilibré
+  const lca = all.filter(e=>e.opt==='LCA').sort((a,b)=>(b.nv||3)-(a.nv||3));
+  const lce = all.filter(e=>e.opt==='LCE').sort((a,b)=>(b.nv||3)-(a.nv||3));
+  const rest = all.filter(e=>e.opt!=='LCA'&&e.opt!=='LCE').sort((a,b)=>(b.nv||3)-(a.nv||3));
+
+  // LCA → classe 0, LCE → classe 1 (si existante), reste → serpentin sur toutes
+  lca.forEach(e => classes[0].eleves.push(e));
+  lce.forEach(e => classes[Math.min(1,nb-1)].eleves.push(e));
+
+  // Serpentin sur le reste, en commençant par la classe la moins remplie
+  let idx = 0, dir = 1;
+  rest.forEach(e => {
+    // Trouver la classe la moins remplie
+    const minIdx = classes.reduce((mi, c, i) => c.eleves.length < classes[mi].eleves.length ? i : mi, 0);
+    classes[minIdx].eleves.push(e);
+  });
+
+  composedClasses = classes;
+}
+
+// ── SAVE COMPOSED ──
+async function saveComposed() {
+  await set(ref(db, `users/${uid}/classes5/_composed`), composedClasses);
+}
+
+// ── RENDER CLASSES ──
+window.renderClasses = () => {
+  if (!composedClasses.length) {
+    G('classes-empty').style.display = 'block';
+    G('classes-actions').style.display = 'none';
+    G('classes-container').style.display = 'none';
+    return;
+  }
+  G('classes-empty').style.display = 'none';
+  G('classes-actions').style.display = 'flex';
+  G('classes-container').style.display = 'grid';
+  G('b-cls').textContent = composedClasses.length;
+
+  G('classes-container').innerHTML = composedClasses.map((cls, ci) => {
+    const G_cnt = cls.eleves.filter(e=>e.sx==='G').length;
+    const F_cnt = cls.eleves.filter(e=>e.sx==='F').length;
+    const avgNv = cls.eleves.length ? (cls.eleves.reduce((s,e)=>s+(e.nv||3),0)/cls.eleves.length).toFixed(1) : '—';
+    const opts = ['LCA','LCE','ALL','ESP'];
+    const optStats = opts.map(o => {const n=cls.eleves.filter(e=>e.opt===o).length; return n?`<span class="opt-badge opt-${o}">${o} ×${n}</span>`:''}).filter(Boolean).join(' ');
+
+    const elevesHtml = [...cls.eleves]
+      .sort((a,b)=>{
+        const na=splitNom(a.nom),nb=splitNom(b.nom);
+        const c=na.family.localeCompare(nb.family,'fr',{sensitivity:'base'});
+        return c!==0?c:na.first.localeCompare(nb.first,'fr',{sensitivity:'base'});
+      })
+      .map(e => {
+        const opt = e.opt||'AUCUNE';
+        return `<div class="cls-eleve" draggable="true"
+          data-id="${e.id}" data-from="${ci}"
+          ondragstart="dragStart(event,${ci},'${e.id}')"
+          ondragover="event.preventDefault()"
+          ondrop="dropOn(event,${ci})">
+          <div class="gab ${e.sx}" style="width:24px;height:24px;font-size:12px">${e.sx==='G'?'♂':'♀'}</div>
+          <span class="cls-eleve-name">${e.nom}</span>
+          <span class="cls-eleve-meta">
+            <span class="opt-badge opt-${opt}">${OPT_LABELS[opt]}</span>
+            <span style="color:${['','#ea4335','#ff7043','#fbbc04','#8bc34a','#43a047'][e.nv]||'#fbbc04'};font-weight:700">Niv.${e.nv}</span>
+          </span>
+          <button class="ico-btn" style="font-size:12px" onclick="openMove(${ci},'${e.id}')" title="Déplacer">↔️</button>
+        </div>`;
+      }).join('');
+
+    return `<div class="cls-card">
+      <div class="cls-head" style="background:${cls.color}">
+        <span>🏫 ${cls.nom}</span>
+        <span style="font-size:13px;opacity:.85">${cls.eleves.length} élèves</span>
+      </div>
+      <div class="cls-stats">
+        <span class="cls-stat">♂ <strong>${G_cnt}</strong></span>
+        <span class="cls-stat">♀ <strong>${F_cnt}</strong></span>
+        <span class="cls-stat">⭐ <strong>${avgNv}</strong></span>
+        ${optStats ? '<span>'+optStats+'</span>' : ''}
+      </div>
+      <div class="cls-body" id="cls-body-${ci}"
+        ondragover="event.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="dropOn(event,${ci})">
+        ${elevesHtml}
+      </div>
+    </div>`;
+  }).join('');
+};
+
+// ── DRAG & DROP ──
+let dragId = null, dragFrom = null;
+
+window.dragStart = (ev, fromCls, id) => {
+  dragId = id; dragFrom = fromCls;
+  ev.target.classList.add('dragging');
+};
+
+window.dropOn = (ev, toCls) => {
+  ev.preventDefault();
+  document.querySelectorAll('.cls-body').forEach(b => b.classList.remove('drag-over'));
+  document.querySelectorAll('.cls-eleve').forEach(e => e.classList.remove('dragging'));
+  if (dragId === null || dragFrom === toCls) return;
+  moveEleve(dragFrom, toCls, dragId);
+  dragId = null; dragFrom = null;
+};
+
+// ── DÉPLACER ──
+window.openMove = (fromCls, id) => {
+  moveFromCls = fromCls;
+  moveEleveId = id;
+  const e = composedClasses[fromCls].eleves.find(x=>x.id===id);
+  G('move-eleve-name').textContent = e?.nom || '';
+  G('move-options').innerHTML = composedClasses.map((cls, ci) => ci === fromCls ? '' : `
+    <button class="btn btn-ghost" style="justify-content:space-between;width:100%" onclick="moveEleve(${fromCls},${ci},'${id}');closeMo('mo-move')">
+      <span>🏫 ${cls.nom}</span>
+      <span style="color:var(--muted);font-size:12px">${cls.eleves.length} élèves</span>
+    </button>`).join('');
+  G('mo-move').classList.add('open');
+};
+
+window.moveEleve = async (fromCls, toCls, id) => {
+  const idx = composedClasses[fromCls].eleves.findIndex(e=>e.id===id);
+  if (idx === -1) return;
+  const [e] = composedClasses[fromCls].eleves.splice(idx, 1);
+  composedClasses[toCls].eleves.push(e);
+  await saveComposed();
+  renderClasses();
+};
+
+// ── RECOMPOSER ──
+window.recomposer = () => {
+  if (confirm('Recomposer effacera l\'arrangement actuel. Continuer ?')) {
+    composedClasses = [];
+    showTab('composer');
   }
 };
 
-// ── Chargement des grilles au changement de classe ─
-async function loadEvalGrids(classId) {
-  try {
-    const snap = await new Promise(res => {
-      onValue(ref(db, `users/${uid}/classes/${classId}/eval`), res, { onlyOnce: true });
-    });
-    evalGrids = snap.val() || {};
-    // Normalise criteres/notes (Firebase peut les omettre si vides)
-    Object.values(evalGrids).forEach(g => {
-      if (!g.criteres) g.criteres = [];
-      if (!g.notes)    g.notes    = {};
-    });
-    currentGrid = Object.keys(evalGrids)[0] || null;
-    renderEvalGridTabs();
-  } catch(e) { evalGrids = {}; currentGrid = null; }
-}
+// ── EXPORT EXCEL (CSV) ──
+window.exporterExcel = () => {
+  let csv = 'Classe,Nom,Sexe,Option,Niveau\n';
+  composedClasses.forEach(cls => {
+    [...cls.eleves]
+      .sort((a,b)=>splitNom(a.nom).family.localeCompare(splitNom(b.nom).family,'fr',{sensitivity:'base'}))
+      .forEach(e => {
+        csv += `"${cls.nom}","${e.nom}","${e.sx==='G'?'Garçon':'Fille'}","${e.opt||'Aucune'}","${e.nv}"\n`;
+      });
+  });
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'classes_5eme_2627.csv'; a.click();
+  URL.revokeObjectURL(url);
+};
 
+// ── MODAL ──
+window.closeMo = id => G(id).classList.remove('open');
+window.addEventListener('click', ev => {
+  if (ev.target.classList.contains('mo')) ev.target.classList.remove('open');
+});
 </script>
-
-<!-- MODAL VERROU ÉVALUATION -->
-<div class="mo" id="modal-eval-lock" onclick="if(event.target===this)closeEvalLock()">
-  <div class="moc" style="max-width:360px;text-align:center">
-    <div style="font-size:48px;margin-bottom:12px">🔒</div>
-    <h3 style="margin-bottom:6px">Onglet protégé</h3>
-    <p style="font-size:14px;color:var(--muted);margin-bottom:20px">Saisissez le mot de passe pour accéder aux évaluations.</p>
-    <input type="password" id="eval-lock-input" placeholder="Mot de passe…"
-      style="width:100%;margin-bottom:10px;text-align:center;font-size:15px;letter-spacing:2px"
-      onkeydown="if(event.key==='Enter')checkEvalPassword()">
-    <div id="eval-lock-error" style="display:none;color:var(--red);font-size:13px;font-weight:600;margin-bottom:10px">
-      ❌ Mot de passe incorrect
-    </div>
-    <div style="display:flex;gap:10px;justify-content:center">
-      <button class="btn" style="background:var(--bg);color:var(--text)" onclick="closeEvalLock()">Annuler</button>
-      <button class="btn btn-b" onclick="checkEvalPassword()">🔓 Déverrouiller</button>
-    </div>
-  </div>
-</div>
-
-<!-- FOOTER -->
-<footer style="text-align:center;padding:16px 24px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);background:#fff;margin-top:auto">
-  Application développée par <strong>Florian Eude</strong> · Collège Yves du Manoir · Vaucresson &nbsp;©&nbsp;2025
-</footer>
-
 </body>
 </html>
