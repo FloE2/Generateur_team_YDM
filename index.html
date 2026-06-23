@@ -235,11 +235,10 @@ input[type=text]:focus,select:focus,input[type=number]:focus{border-color:var(--
           <div class="fg">
             <label>Option LV2 / Latin</label>
             <div class="opt-sel">
-              <input type="radio" name="opt" id="o-lca" value="LCA"><label for="o-lca">LCA Latin</label>
-              <input type="radio" name="opt" id="o-lce" value="LCE"><label for="o-lce">LCE Grec</label>
-              <input type="radio" name="opt" id="o-all" value="ALL"><label for="o-all">Allemand</label>
-              <input type="radio" name="opt" id="o-esp" value="ESP"><label for="o-esp">Espagnol</label>
-              <input type="radio" name="opt" id="o-auc" value="AUCUNE" checked><label for="o-auc">Aucune</label>
+              <input type="checkbox" name="opt" id="o-lca" value="LCA"><label for="o-lca">LCA Latin</label>
+              <input type="checkbox" name="opt" id="o-lce" value="LCE"><label for="o-lce">LCE Grec</label>
+              <input type="checkbox" name="opt" id="o-all" value="ALL"><label for="o-all">Allemand</label>
+              <input type="checkbox" name="opt" id="o-esp" value="ESP"><label for="o-esp">Espagnol</label>
             </div>
           </div>
           <div class="fg">
@@ -359,13 +358,12 @@ input[type=text]:focus,select:focus,input[type=number]:focus{border-color:var(--
       </div>
     </div>
     <div class="fg" style="margin-bottom:12px">
-      <label>Option</label>
+      <label>Option(s)</label>
       <div class="opt-sel">
-        <input type="radio" name="eopt" id="eo-lca" value="LCA"><label for="eo-lca">LCA Latin</label>
-        <input type="radio" name="eopt" id="eo-lce" value="LCE"><label for="eo-lce">LCE Grec</label>
-        <input type="radio" name="eopt" id="eo-all" value="ALL"><label for="eo-all">Allemand</label>
-        <input type="radio" name="eopt" id="eo-esp" value="ESP"><label for="eo-esp">Espagnol</label>
-        <input type="radio" name="eopt" id="eo-auc" value="AUCUNE"><label for="eo-auc">Aucune</label>
+        <input type="checkbox" name="eopt" id="eo-lca" value="LCA"><label for="eo-lca">LCA Latin</label>
+        <input type="checkbox" name="eopt" id="eo-lce" value="LCE"><label for="eo-lce">LCE Grec</label>
+        <input type="checkbox" name="eopt" id="eo-all" value="ALL"><label for="eo-all">Allemand</label>
+        <input type="checkbox" name="eopt" id="eo-esp" value="ESP"><label for="eo-esp">Espagnol</label>
       </div>
     </div>
     <div class="fg" style="margin-bottom:18px">
@@ -538,11 +536,13 @@ window.addEleve = async () => {
   if (!currentSrcId) return;
   const nom = G('inp').value.trim();
   if (!nom) { G('inp').focus(); return; }
-  const sx  = document.querySelector('input[name=sx]:checked').value;
-  const opt = document.querySelector('input[name=opt]:checked').value;
-  const nv  = parseInt(document.querySelector('input[name=nv]:checked').value);
-  const r   = push(ref(db, `users/${uid}/classes5/${currentSrcId}/eleves`));
-  await set(r, { nom, sx, opt, nv });
+  const sx   = document.querySelector('input[name=sx]:checked').value;
+  const opts = [...document.querySelectorAll('input[name=opt]:checked')].map(i=>i.value);
+  const nv   = parseInt(document.querySelector('input[name=nv]:checked').value);
+  const r    = push(ref(db, `users/${uid}/classes5/${currentSrcId}/eleves`));
+  await set(r, { nom, sx, opts, nv });
+  // reset checkboxes
+  document.querySelectorAll('input[name=opt]').forEach(i=>i.checked=false);
   G('inp').value = '';
   G('inp').focus();
 };
@@ -557,18 +557,20 @@ window.openEdit = id => {
   const e = elevesOf(currentSrcId)[id];
   G('en2').value = e.nom;
   document.querySelector(`input[name=esx][value=${e.sx}]`).checked = true;
-  document.querySelector(`input[name=eopt][value=${e.opt||'AUCUNE'}]`).checked = true;
+  // Support ancien format (opt string) et nouveau (opts array)
+  const eleveOpts = Array.isArray(e.opts) ? e.opts : (e.opt && e.opt !== 'AUCUNE' ? [e.opt] : []);
+  document.querySelectorAll('input[name=eopt]').forEach(i => { i.checked = eleveOpts.includes(i.value); });
   document.querySelector(`input[name=env][value=${e.nv}]`).checked = true;
   G('mo-edit').classList.add('open');
 };
 
 window.saveEdit = async () => {
-  const nom = G('en2').value.trim();
+  const nom  = G('en2').value.trim();
   if (!nom) return;
-  const sx  = document.querySelector('input[name=esx]:checked').value;
-  const opt = document.querySelector('input[name=eopt]:checked').value;
-  const nv  = parseInt(document.querySelector('input[name=env]:checked').value);
-  await update(ref(db, `users/${uid}/classes5/${currentSrcId}/eleves/${editId}`), { nom, sx, opt, nv });
+  const sx   = document.querySelector('input[name=esx]:checked').value;
+  const opts = [...document.querySelectorAll('input[name=eopt]:checked')].map(i=>i.value);
+  const nv   = parseInt(document.querySelector('input[name=env]:checked').value);
+  await update(ref(db, `users/${uid}/classes5/${currentSrcId}/eleves/${editId}`), { nom, sx, opts, nv });
   closeMo('mo-edit');
 };
 
@@ -576,43 +578,74 @@ window.setNiveau = async (id, nv) => {
   await update(ref(db, `users/${uid}/classes5/${currentSrcId}/eleves/${id}`), { nv });
 };
 
-// ── POPUP OPTION RAPIDE ──────────────────────────────────────────────────────
+// Normalise les options (compatibilité ancien format)
+function getOpts(e) {
+  if (Array.isArray(e.opts)) return e.opts;
+  if (e.opt && e.opt !== 'AUCUNE') return [e.opt];
+  return [];
+}
+
+// ── POPUP OPTION RAPIDE (multi) ──────────────────────────────────────────────
 const OPTS = [
-  { val:'LCA',    label:'LCA Latin',    color:'#7b1fa2' },
-  { val:'LCE',    label:'LCE Grec',     color:'#0097a7' },
-  { val:'ALL',    label:'Allemand',     color:'#e65100' },
-  { val:'ESP',    label:'Espagnol',     color:'#2e7d32' },
-  { val:'AUCUNE', label:'Aucune option',color:'#78909c' },
+  { val:'LCA', label:'LCA Latin',    color:'#7b1fa2' },
+  { val:'LCE', label:'LCE Grec',     color:'#0097a7' },
+  { val:'ALL', label:'Allemand',     color:'#e65100' },
+  { val:'ESP', label:'Espagnol',     color:'#2e7d32' },
 ];
 
 let activePopup = null;
 
-window.openOptPopup = (ev, id, currentOpt) => {
+window.openOptPopup = (ev, id, optsJson) => {
   ev.stopPropagation();
   closeOptPopup();
+  const currentOpts = JSON.parse(decodeURIComponent(optsJson));
 
   const popup = document.createElement('div');
   popup.className = 'opt-popup';
   popup.id = 'opt-popup';
 
+  // Titre
+  const title = document.createElement('div');
+  title.style.cssText = 'font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;padding:4px 12px 6px;border-bottom:1px solid var(--border);margin-bottom:4px';
+  title.textContent = 'Options (multi-sélection)';
+  popup.appendChild(title);
+
+  const checkState = {...Object.fromEntries(OPTS.map(o=>[o.val, currentOpts.includes(o.val)]))};
+
   OPTS.forEach(o => {
     const btn = document.createElement('button');
-    btn.innerHTML = `<span style="width:10px;height:10px;border-radius:50%;background:${o.color};display:inline-block;flex-shrink:0"></span>${o.label}`;
-    if (o.val === currentOpt) btn.classList.add('active-opt');
-    btn.onclick = (e) => { e.stopPropagation(); setOpt(id, o.val); closeOptPopup(); };
+    const dot = `<span style="width:10px;height:10px;border-radius:50%;background:${o.color};display:inline-block;flex-shrink:0"></span>`;
+    const updateBtn = () => {
+      btn.innerHTML = dot + o.label + (checkState[o.val] ? ' ✓' : '');
+      btn.style.background = checkState[o.val] ? '#f0f4f9' : '';
+      btn.style.fontWeight = checkState[o.val] ? '800' : '600';
+    };
+    updateBtn();
+    btn.onclick = async (e) => {
+      e.stopPropagation();
+      checkState[o.val] = !checkState[o.val];
+      updateBtn();
+      const newOpts = OPTS.map(x=>x.val).filter(v=>checkState[v]);
+      await update(ref(db, `users/${uid}/classes5/${currentSrcId}/eleves/${id}`), { opts: newOpts });
+    };
     popup.appendChild(btn);
   });
+
+  // Bouton fermer
+  const closeBtn = document.createElement('button');
+  closeBtn.innerHTML = '✓ Fermer';
+  closeBtn.style.cssText = 'margin-top:4px;border-top:1px solid var(--border);width:100%;justify-content:center;color:var(--primary);font-weight:700';
+  closeBtn.onclick = e => { e.stopPropagation(); closeOptPopup(); };
+  popup.appendChild(closeBtn);
 
   document.body.appendChild(popup);
   activePopup = popup;
 
-  // Positionner le popup près du badge cliqué
   const rect = ev.target.getBoundingClientRect();
-  const pw = 160, ph = 200;
   let top  = rect.bottom + 6;
   let left = rect.left;
-  if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
-  if (top + ph > window.innerHeight - 8) top = rect.top - ph - 6;
+  if (left + 190 > window.innerWidth - 8) left = window.innerWidth - 190 - 8;
+  if (top + 240 > window.innerHeight - 8) top = rect.top - 240 - 6;
   popup.style.top  = top  + 'px';
   popup.style.left = left + 'px';
 };
@@ -623,10 +656,6 @@ function closeOptPopup() {
 document.addEventListener('click', closeOptPopup);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOptPopup(); });
 
-window.setOpt = async (id, opt) => {
-  await update(ref(db, `users/${uid}/classes5/${currentSrcId}/eleves/${id}`), { opt });
-};
-
 window.renderEleves = () => {
   if (!currentSrcId) {
     G('list').innerHTML = '<div class="empty"><div class="em">📋</div><p>Créez d\'abord une classe source.</p></div>';
@@ -635,11 +664,12 @@ window.renderEleves = () => {
   const q   = (G('q')?.value || '').toLowerCase();
   const fsx = G('fsx')?.value || '';
   const fop = G('fopt')?.value || '';
-  let L = curEleves().filter(e =>
-    e.nom.toLowerCase().includes(q) &&
-    (!fsx || e.sx === fsx) &&
-    (!fop || (e.opt||'AUCUNE') === fop)
-  );
+  let L = curEleves().filter(e => {
+    const eopts = getOpts(e);
+    return e.nom.toLowerCase().includes(q) &&
+      (!fsx || e.sx === fsx) &&
+      (!fop || eopts.includes(fop) || (fop === 'AUCUNE' && eopts.length === 0));
+  });
   L.sort((a, b) => {
     const na = splitNom(a.nom), nb = splitNom(b.nom);
     const c = na.family.localeCompare(nb.family, 'fr', { sensitivity: 'base' });
@@ -650,8 +680,12 @@ window.renderEleves = () => {
   G('list').innerHTML = !L.length
     ? '<div class="empty" style="grid-column:1/-1"><div class="em">👀</div><p>Aucun élève trouvé.</p></div>'
     : L.map(e => {
-      const col = nvColor[e.nv] || '#fbbc04';
-      const opt = e.opt || 'AUCUNE';
+      const col   = nvColor[e.nv] || '#fbbc04';
+      const eopts = getOpts(e);
+      const optsJson = encodeURIComponent(JSON.stringify(eopts));
+      const badgesHtml = eopts.length
+        ? eopts.map(o => `<span class="opt-badge opt-${o}">${o}</span>`).join('')
+        : `<span class="opt-badge opt-AUCUNE">Aucune</span>`;
       return `
       <div class="sc">
         <div class="gab ${e.sx}">${e.sx === 'G' ? '♂' : '♀'}</div>
@@ -659,7 +693,9 @@ window.renderEleves = () => {
           <div class="sname" title="${e.nom}">${e.nom}</div>
           <div class="smeta">
             <span>${e.sx === 'G' ? 'Garçon' : 'Fille'}</span>
-            <span class="opt-badge opt-${opt} clickable" title="Cliquer pour changer l'option" onclick="openOptPopup(event,'${e.id}','${opt}')">${opt === 'AUCUNE' ? 'Aucune option' : opt} ▾</span>
+            <span class="opt-badges-wrap clickable" title="Cliquer pour changer les options" onclick="openOptPopup(event,'${e.id}','${optsJson}')" style="display:flex;gap:3px;flex-wrap:wrap;cursor:pointer">
+              ${badgesHtml}<span style="font-size:10px;opacity:.6">▾</span>
+            </span>
           </div>
           <div class="niv-stars">
             ${[1,2,3,4,5].map(n => `<span class="istar ${n<=e.nv?'on':'off'}" style="${n<=e.nv?'color:'+col:''}" onclick="setNiveau('${e.id}',${n})">★</span>`).join('')}
@@ -676,15 +712,17 @@ window.renderEleves = () => {
 
 function updateStats() {
   if (!currentSrcId) { G('sbar').innerHTML = ''; return; }
-  const all = curEleves();
-  const opts = ['LCA','LCE','ALL','ESP','AUCUNE'];
-  const optCounts = Object.fromEntries(opts.map(o => [o, all.filter(e=>(e.opt||'AUCUNE')===o).length]));
+  const all  = curEleves();
+  const opts = ['LCA','LCE','ALL','ESP'];
+  const optCounts = Object.fromEntries(opts.map(o => [o, all.filter(e=>getOpts(e).includes(o)).length]));
+  const sansOpt   = all.filter(e=>getOpts(e).length===0).length;
   const avgNv = all.length ? (all.reduce((s,e)=>s+(e.nv||3),0)/all.length).toFixed(1) : '—';
   G('sbar').innerHTML = `
     <div class="chip">👥 Total <strong>${all.length}</strong></div>
     <div class="chip" style="color:var(--boy)">♂ <strong>${all.filter(e=>e.sx==='G').length}</strong></div>
     <div class="chip" style="color:var(--girl)">♀ <strong>${all.filter(e=>e.sx==='F').length}</strong></div>
     ${opts.filter(o=>optCounts[o]>0).map(o=>`<div class="chip"><span class="opt-badge opt-${o}">${o}</span> <strong>${optCounts[o]}</strong></div>`).join('')}
+    ${sansOpt>0?`<div class="chip"><span class="opt-badge opt-AUCUNE">Aucune</span> <strong>${sansOpt}</strong></div>`:''}
     <div class="chip">⭐ Niv.moy. <strong>${avgNv}</strong></div>`;
   G('b-el').textContent = all.length;
 }
@@ -700,14 +738,15 @@ window.updateComposerPreview = () => {
   const nb = parseInt(G('nb-classes')?.value) || 3;
   const all = getAllEleves();
   if (!all.length) { G('composer-preview').innerHTML = ''; return; }
-
-  const opts = ['LCA','LCE','ALL','ESP','AUCUNE'];
+  const opts = ['LCA','LCE','ALL','ESP'];
   let html = `<div class="al al-i" style="margin-top:12px">`;
-  html += `<strong>${all.length} élèves</strong> issus de ${Object.keys(sources).length} classe(s) source(s) → <strong>${nb} classes</strong> de ~${Math.round(all.length/nb)} élèves<br>`;
+  html += `<strong>${all.length} élèves</strong> → <strong>${nb} classes</strong> de ~${Math.round(all.length/nb)} élèves<br><br>`;
   opts.forEach(o => {
-    const n = all.filter(e=>(e.opt||'AUCUNE')===o).length;
-    if (n) html += `<span class="opt-badge opt-${o}" style="margin-right:4px">${o}</span> ${n} élève(s) &nbsp;`;
+    const n = all.filter(e=>getOpts(e).includes(o)).length;
+    if (n) html += `<span class="opt-badge opt-${o}" style="margin-right:4px">${o}</span> ${n} &nbsp;`;
   });
+  const sans = all.filter(e=>getOpts(e).length===0).length;
+  if (sans) html += `<span class="opt-badge opt-AUCUNE" style="margin-right:4px">Aucune</span> ${sans}`;
   html += `</div>`;
   G('composer-preview').innerHTML = html;
 };
@@ -759,45 +798,30 @@ function composerEquilibre(all, nb) {
 
 function composerParOptions(all, nb) {
   const classes = Array.from({length:nb}, () => ({eleves:[]}));
-  const opts = ['LCA','LCE','ALL','ESP','AUCUNE'];
-
-  // Regrouper par option
-  const groups = {};
-  opts.forEach(o => { groups[o] = all.filter(e=>(e.opt||'AUCUNE')===o); });
-
-  // Assigner chaque groupe à des classes (on fait des blocs)
+  const optKeys = ['LCA','LCE','ALL','ESP'];
   let clsIdx = 0;
-  opts.forEach(opt => {
-    const pool = [...groups[opt]].sort((a,b)=>(b.nv||3)-(a.nv||3));
-    pool.forEach(e => {
-      classes[clsIdx % nb].eleves.push(e);
-      clsIdx++;
-    });
+  // D'abord les élèves avec options, regroupés par option principale
+  optKeys.forEach(o => {
+    const pool = [...all.filter(e=>getOpts(e).includes(o))].sort((a,b)=>(b.nv||3)-(a.nv||3));
+    pool.forEach(e => { classes[clsIdx % nb].eleves.push(e); clsIdx++; });
   });
+  // Puis les sans option
+  const sans = all.filter(e=>getOpts(e).length===0).sort((a,b)=>(b.nv||3)-(a.nv||3));
+  sans.forEach(e => { classes[clsIdx % nb].eleves.push(e); clsIdx++; });
   composedClasses = classes;
 }
 
 function composerHybride(all, nb) {
   const classes = Array.from({length:nb}, () => ({eleves:[]}));
-
-  // LCA/LCE : options contraintes — on les répartit dans 1-2 classes max
-  // Les autres options : serpentin équilibré
-  const lca = all.filter(e=>e.opt==='LCA').sort((a,b)=>(b.nv||3)-(a.nv||3));
-  const lce = all.filter(e=>e.opt==='LCE').sort((a,b)=>(b.nv||3)-(a.nv||3));
-  const rest = all.filter(e=>e.opt!=='LCA'&&e.opt!=='LCE').sort((a,b)=>(b.nv||3)-(a.nv||3));
-
-  // LCA → classe 0, LCE → classe 1 (si existante), reste → serpentin sur toutes
+  const lca  = all.filter(e=>getOpts(e).includes('LCA')).sort((a,b)=>(b.nv||3)-(a.nv||3));
+  const lce  = all.filter(e=>getOpts(e).includes('LCE') && !getOpts(e).includes('LCA')).sort((a,b)=>(b.nv||3)-(a.nv||3));
+  const rest = all.filter(e=>!getOpts(e).includes('LCA') && !getOpts(e).includes('LCE')).sort((a,b)=>(b.nv||3)-(a.nv||3));
   lca.forEach(e => classes[0].eleves.push(e));
   lce.forEach(e => classes[Math.min(1,nb-1)].eleves.push(e));
-
-  // Serpentin sur le reste, en commençant par la classe la moins remplie
-  let idx = 0, dir = 1;
   rest.forEach(e => {
-    // Trouver la classe la moins remplie
-    const minIdx = classes.reduce((mi, c, i) => c.eleves.length < classes[mi].eleves.length ? i : mi, 0);
+    const minIdx = classes.reduce((mi,c,i) => c.eleves.length < classes[mi].eleves.length ? i : mi, 0);
     classes[minIdx].eleves.push(e);
   });
-
   composedClasses = classes;
 }
 
@@ -824,7 +848,7 @@ window.renderClasses = () => {
     const F_cnt = cls.eleves.filter(e=>e.sx==='F').length;
     const avgNv = cls.eleves.length ? (cls.eleves.reduce((s,e)=>s+(e.nv||3),0)/cls.eleves.length).toFixed(1) : '—';
     const opts = ['LCA','LCE','ALL','ESP'];
-    const optStats = opts.map(o => {const n=cls.eleves.filter(e=>e.opt===o).length; return n?`<span class="opt-badge opt-${o}">${o} ×${n}</span>`:''}).filter(Boolean).join(' ');
+    const optStats = opts.map(o => {const n=cls.eleves.filter(e=>getOpts(e).includes(o)).length; return n?`<span class="opt-badge opt-${o}">${o} ×${n}</span>`:''}).filter(Boolean).join(' ');
 
     const elevesHtml = [...cls.eleves]
       .sort((a,b)=>{
@@ -833,7 +857,10 @@ window.renderClasses = () => {
         return c!==0?c:na.first.localeCompare(nb.first,'fr',{sensitivity:'base'});
       })
       .map(e => {
-        const opt = e.opt||'AUCUNE';
+        const eopts = getOpts(e);
+        const optBadges = eopts.length
+          ? eopts.map(o=>`<span class="opt-badge opt-${o}">${OPT_LABELS[o]||o}</span>`).join('')
+          : `<span class="opt-badge opt-AUCUNE">—</span>`;
         return `<div class="cls-eleve" draggable="true"
           data-id="${e.id}" data-from="${ci}"
           ondragstart="dragStart(event,${ci},'${e.id}')"
@@ -842,7 +869,7 @@ window.renderClasses = () => {
           <div class="gab ${e.sx}" style="width:24px;height:24px;font-size:12px">${e.sx==='G'?'♂':'♀'}</div>
           <span class="cls-eleve-name">${e.nom}</span>
           <span class="cls-eleve-meta">
-            <span class="opt-badge opt-${opt}">${OPT_LABELS[opt]}</span>
+            <span style="display:flex;gap:2px">${optBadges}</span>
             <span style="color:${['','#ea4335','#ff7043','#fbbc04','#8bc34a','#43a047'][e.nv]||'#fbbc04'};font-weight:700">Niv.${e.nv}</span>
           </span>
           <button class="ico-btn" style="font-size:12px" onclick="openMove(${ci},'${e.id}')" title="Déplacer">↔️</button>
@@ -925,7 +952,7 @@ window.exporterExcel = () => {
     [...cls.eleves]
       .sort((a,b)=>splitNom(a.nom).family.localeCompare(splitNom(b.nom).family,'fr',{sensitivity:'base'}))
       .forEach(e => {
-        csv += `"${cls.nom}","${e.nom}","${e.sx==='G'?'Garçon':'Fille'}","${e.opt||'Aucune'}","${e.nv}"\n`;
+        csv += `"${cls.nom}","${e.nom}","${e.sx==='G'?'Garçon':'Fille'}","${getOpts(e).join('+')||'Aucune'}","${e.nv}"\n`;
       });
   });
   const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
@@ -1054,7 +1081,7 @@ function processLines(rows) {
     if (!nom) { errors.push(`Ligne ${lineNum} : nom vide`); return; }
     if (!sx)  { errors.push(`Ligne ${lineNum} : sexe invalide ("${cols[cols.length-1]}")`); return; }
 
-    valid.push({ nom, sx, opt, nv: 3 });
+    valid.push({ nom, sx, opts: opt !== 'AUCUNE' ? [opt] : [], nv: 3 });
   });
 
   importRows = valid;
@@ -1074,7 +1101,7 @@ function processLines(rows) {
     <td style="padding:7px 12px;font-size:12px;color:var(--muted)">${i+1}</td>
     <td style="padding:7px 12px;font-size:13px;font-weight:600">${e.nom}</td>
     <td style="padding:7px 12px;font-size:13px">${e.sx==='G'?'<span style="color:var(--boy)">♂ Garçon</span>':'<span style="color:var(--girl)">♀ Fille</span>'}</td>
-    <td style="padding:7px 12px"><span class="opt-badge opt-${e.opt}">${e.opt}</span></td>
+    <td style="padding:7px 12px"><span class="opt-badge opt-${e.opts&&e.opts.length?e.opts[0]:'AUCUNE'}">${e.opts&&e.opts.length?e.opts.join('+'):'Aucune'}</span></td>
   </tr>`).join('');
   G('import-table').innerHTML = thead + tbody;
   G('import-errors').innerHTML = errors.map(e => `⚠️ ${e}`).join('<br>');
@@ -1088,7 +1115,7 @@ window.confirmImport = async () => {
   const updates = {};
   importRows.forEach(e => {
     const key = push(ref(db, `users/${uid}/classes5/${currentSrcId}/eleves`)).key;
-    updates[`users/${uid}/classes5/${currentSrcId}/eleves/${key}`] = { nom: e.nom, sx: e.sx, opt: e.opt, nv: e.nv };
+    updates[`users/${uid}/classes5/${currentSrcId}/eleves/${key}`] = { nom: e.nom, sx: e.sx, opts: e.opts||[], nv: e.nv };
   });
   await update(ref(db), updates);
   G('btn-import-confirm').textContent = '✅ Importer les élèves';
