@@ -236,7 +236,7 @@ input[type=text]:focus,select:focus,input[type=number]:focus{border-color:var(--
             <label>Option LV2 / Latin</label>
             <div class="opt-sel">
               <input type="checkbox" name="opt" id="o-lca" value="LCA"><label for="o-lca">LCA Latin</label>
-              <input type="checkbox" name="opt" id="o-lce" value="LCE"><label for="o-lce">LCE Grec</label>
+              <input type="checkbox" name="opt" id="o-lce" value="LCE"><label for="o-lce">LCE</label>
               <input type="checkbox" name="opt" id="o-all" value="ALL"><label for="o-all">Allemand</label>
               <input type="checkbox" name="opt" id="o-esp" value="ESP"><label for="o-esp">Espagnol</label>
             </div>
@@ -271,7 +271,7 @@ input[type=text]:focus,select:focus,input[type=number]:focus{border-color:var(--
         <select id="fopt" onchange="renderEleves()" style="padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px">
           <option value="">Toutes options</option>
           <option value="LCA">LCA Latin</option>
-          <option value="LCE">LCE Grec</option>
+          <option value="LCE">LCE</option>
           <option value="ALL">Allemand</option>
           <option value="ESP">Espagnol</option>
           <option value="AUCUNE">Aucune option</option>
@@ -361,7 +361,7 @@ input[type=text]:focus,select:focus,input[type=number]:focus{border-color:var(--
       <label>Option(s)</label>
       <div class="opt-sel">
         <input type="checkbox" name="eopt" id="eo-lca" value="LCA"><label for="eo-lca">LCA Latin</label>
-        <input type="checkbox" name="eopt" id="eo-lce" value="LCE"><label for="eo-lce">LCE Grec</label>
+        <input type="checkbox" name="eopt" id="eo-lce" value="LCE"><label for="eo-lce">LCE</label>
         <input type="checkbox" name="eopt" id="eo-all" value="ALL"><label for="eo-all">Allemand</label>
         <input type="checkbox" name="eopt" id="eo-esp" value="ESP"><label for="eo-esp">Espagnol</label>
       </div>
@@ -588,7 +588,7 @@ function getOpts(e) {
 // ── POPUP OPTION RAPIDE (multi) ──────────────────────────────────────────────
 const OPTS = [
   { val:'LCA', label:'LCA Latin',    color:'#7b1fa2' },
-  { val:'LCE', label:'LCE Grec',     color:'#0097a7' },
+  { val:'LCE', label:'LCE',     color:'#0097a7' },
   { val:'ALL', label:'Allemand',     color:'#e65100' },
   { val:'ESP', label:'Espagnol',     color:'#2e7d32' },
 ];
@@ -1031,7 +1031,7 @@ function normOpt(val) {
   if (!val) return 'AUCUNE';
   const v = val.trim().toUpperCase();
   if (v.includes('LCA') || v.includes('LATIN'))   return 'LCA';
-  if (v.includes('LCE') || v.includes('GREC'))    return 'LCE';
+  if (v.includes('LCE') || v.includes('ANGLAIS') || v.includes('ANG'))    return 'LCE';
   if (v.includes('ALL') || v.includes('ALLEM'))   return 'ALL';
   if (v.includes('ESP'))                           return 'ESP';
   return 'AUCUNE';
