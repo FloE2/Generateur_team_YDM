@@ -639,6 +639,7 @@ window.openOptPopup = (ev, id, optsJson) => {
   popup.appendChild(closeBtn);
 
   document.body.appendChild(popup);
+  popup.addEventListener('click', e => e.stopPropagation()); // empêche la fermeture au clic dans le popup
   activePopup = popup;
 
   const rect = ev.target.getBoundingClientRect();
