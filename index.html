@@ -79,6 +79,14 @@ input[type=text]:focus,select:focus,input[type=number]:focus{border-color:var(--
 
 /* OPTIONS BADGES */
 .opt-badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;color:#fff;letter-spacing:.3px}
+.opt-badge.clickable{cursor:pointer;outline:2px solid transparent;transition:outline .15s,filter .15s}
+.opt-badge.clickable:hover{filter:brightness(1.15);outline:2px solid rgba(0,0,0,.2)}
+
+/* Popup option rapide */
+.opt-popup{position:fixed;z-index:200;background:#fff;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,.18);padding:8px;display:flex;flex-direction:column;gap:4px;min-width:150px}
+.opt-popup button{border:none;background:none;text-align:left;padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;transition:background .15s}
+.opt-popup button:hover{background:var(--bg)}
+.opt-popup button.active-opt{background:#f0f4f9}
 .opt-LCA{background:var(--lca)}
 .opt-LCE{background:var(--lce)}
 .opt-ALL{background:var(--all)}
@@ -568,6 +576,57 @@ window.setNiveau = async (id, nv) => {
   await update(ref(db, `users/${uid}/classes5/${currentSrcId}/eleves/${id}`), { nv });
 };
 
+// ── POPUP OPTION RAPIDE ──────────────────────────────────────────────────────
+const OPTS = [
+  { val:'LCA',    label:'LCA Latin',    color:'#7b1fa2' },
+  { val:'LCE',    label:'LCE Grec',     color:'#0097a7' },
+  { val:'ALL',    label:'Allemand',     color:'#e65100' },
+  { val:'ESP',    label:'Espagnol',     color:'#2e7d32' },
+  { val:'AUCUNE', label:'Aucune option',color:'#78909c' },
+];
+
+let activePopup = null;
+
+window.openOptPopup = (ev, id, currentOpt) => {
+  ev.stopPropagation();
+  closeOptPopup();
+
+  const popup = document.createElement('div');
+  popup.className = 'opt-popup';
+  popup.id = 'opt-popup';
+
+  OPTS.forEach(o => {
+    const btn = document.createElement('button');
+    btn.innerHTML = `<span style="width:10px;height:10px;border-radius:50%;background:${o.color};display:inline-block;flex-shrink:0"></span>${o.label}`;
+    if (o.val === currentOpt) btn.classList.add('active-opt');
+    btn.onclick = (e) => { e.stopPropagation(); setOpt(id, o.val); closeOptPopup(); };
+    popup.appendChild(btn);
+  });
+
+  document.body.appendChild(popup);
+  activePopup = popup;
+
+  // Positionner le popup près du badge cliqué
+  const rect = ev.target.getBoundingClientRect();
+  const pw = 160, ph = 200;
+  let top  = rect.bottom + 6;
+  let left = rect.left;
+  if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+  if (top + ph > window.innerHeight - 8) top = rect.top - ph - 6;
+  popup.style.top  = top  + 'px';
+  popup.style.left = left + 'px';
+};
+
+function closeOptPopup() {
+  if (activePopup) { activePopup.remove(); activePopup = null; }
+}
+document.addEventListener('click', closeOptPopup);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOptPopup(); });
+
+window.setOpt = async (id, opt) => {
+  await update(ref(db, `users/${uid}/classes5/${currentSrcId}/eleves/${id}`), { opt });
+};
+
 window.renderEleves = () => {
   if (!currentSrcId) {
     G('list').innerHTML = '<div class="empty"><div class="em">📋</div><p>Créez d\'abord une classe source.</p></div>';
@@ -600,7 +659,7 @@ window.renderEleves = () => {
           <div class="sname" title="${e.nom}">${e.nom}</div>
           <div class="smeta">
             <span>${e.sx === 'G' ? 'Garçon' : 'Fille'}</span>
-            <span class="opt-badge opt-${opt}">${opt === 'AUCUNE' ? 'Aucune option' : opt}</span>
+            <span class="opt-badge opt-${opt} clickable" title="Cliquer pour changer l'option" onclick="openOptPopup(event,'${e.id}','${opt}')">${opt === 'AUCUNE' ? 'Aucune option' : opt} ▾</span>
           </div>
           <div class="niv-stars">
             ${[1,2,3,4,5].map(n => `<span class="istar ${n<=e.nv?'on':'off'}" style="${n<=e.nv?'color:'+col:''}" onclick="setNiveau('${e.id}',${n})">★</span>`).join('')}
