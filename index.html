@@ -643,11 +643,18 @@ let teamColors = {};
 const OPTS = ['ALL', 'ESP', 'LCE', 'LAT'];
 const OPT_LABEL = { ALL: 'Allemand', ESP: 'Espagnol', LCE: 'LCE', LAT: 'Latin' };
 const OPT_COLOR = { ALL: '#5c6bc0', ESP: '#ef6c00', LCE: '#00897b', LAT: '#8e24aa' };
+// Alias pour lire des codes hétérogènes (minuscules, anciens libellés, lca=latin…)
+const OPT_ALIAS = { all: 'ALL', allemand: 'ALL', deutsch: 'ALL',
+  esp: 'ESP', espagnol: 'ESP', espanol: 'ESP',
+  lce: 'LCE',
+  lat: 'LAT', latin: 'LAT', lca: 'LAT' };
+const normOpt = o => OPT_ALIAS[String(o).toLowerCase()] || String(o).toUpperCase();
+const optColor = o => OPT_COLOR[o] || '#9aa0a6';
 // Une classe est en mode "composition de classes" si son nom contient "composition"
 function isCompoClass() {
   return (classes[currentClassId]?.nom || '').toLowerCase().includes('composition');
 }
-function optsOf(e) { return Array.isArray(e.opts) ? e.opts : []; }
+function optsOf(e) { return [...new Set((Array.isArray(e.opts) ? e.opts : []).map(normOpt))]; }
 
 function elevesOf(classId) {
   return classes[classId]?.eleves || {};
@@ -1628,7 +1635,8 @@ function renderEQ() {
       ondragleave="dragLeavePlayer(event)"
       ondrop="dropOnPlayer(event)">
       <div class="pnum">${j.num}</div>
-      <div class="pname">${j.nom}${(Array.isArray(j.opts)&&j.opts.length)?' '+j.opts.map(o=>`<span style="font-size:9px;font-weight:800;color:#fff;background:${OPT_COLOR[o]};padding:1px 5px;border-radius:9px;vertical-align:middle">${o}</span>`).join(' '):''}</div>
+      <div class="pname">${j.nom}${optsOf(j).length?' '+optsOf(j).map(o=>`<span style="font-size:9px;font-weight:800;color:#fff;background:${optColor(o)};padding:1px 6px;border-radius:9px;vertical-align:middle">${o}</span>`).join(' '):''}</div>
+      ${isCompoClass()?`<span style="font-size:13px;letter-spacing:1px;white-space:nowrap" title="Niveau ${j.nv}">${[1,2,3,4,5].map(k=>`<span style="color:${k<=j.nv?['','#ea4335','#ff7043','#fbbc04','#8bc34a','#43a047'][j.nv]:'#dadce0'}">★</span>`).join('')}</span>`:''}
       <span style="font-size:18px;font-weight:900;color:${j.sx==='G'?'var(--boy)':'var(--girl)'}">${j.sx==='G'?'♂\uFE0E':'♀\uFE0E'}</span>
     </div>`;
 
