@@ -167,6 +167,13 @@ input[type=text]{min-width:160px}
 .istar.on  { color:var(--yellow); }
 .istar.off { color:#dadce0; }
 .istar:hover { transform:scale(1.25); }
+/* ── Options LV (Composition 5ème uniquement) ─────────────── */
+.opt-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.opt-chip{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer;border:1.5px solid;user-select:none;line-height:1.4;transition:all .12s}
+.opt-chip:hover{transform:translateY(-1px)}
+.opt-chip.off{background:#fff;color:var(--muted);border-color:var(--border);opacity:.7}
+.opt-cnt{font-size:13px;font-weight:700;color:#fff;padding:2px 8px;border-radius:14px}
+.repart-card .si label{display:block}
 
 @media(max-width:600px){.content{padding:12px}input[type=text]{min-width:unset;width:100%}}
 @media print{
@@ -306,6 +313,19 @@ input[type=text]{min-width:160px}
 
       <!-- PARAMÈTRES -->
       <div class="panel" id="panel-params">
+        <div class="card repart-card" id="repart-card" style="display:none;border:2px solid var(--primary)">
+          <div class="ct">🎓 Répartir en classes équilibrées <span style="font-weight:400;color:var(--muted);font-size:13px">(options · niveau · sexe)</span></div>
+          <p style="color:var(--muted);font-size:13px;margin:-6px 0 14px">
+            Crée des classes d'effectif équivalent, en répartissant équitablement chaque option (Latin, Allemand, LCE, Espagnol) ainsi que les niveaux et les sexes. Relancez « Répartir » pour obtenir une autre proposition, puis ajustez à la main par glisser-déposer dans l'onglet Équipes.
+          </p>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+            <div class="si"><label>Nombre de classes</label>
+              <input type="number" id="nclasses" value="3" min="2" max="12" style="width:110px">
+            </div>
+            <button class="btn btn-g btn-sm" style="padding:11px 20px;font-size:15px" onclick="repartirClasses()">🎓 Répartir</button>
+          </div>
+        </div>
+
         <div class="card">
           <div class="ct">⚙️ Configuration des équipes</div>
 
@@ -619,6 +639,16 @@ const COL = ['#e53935','#1e88e5','#43a047','#fb8c00','#8e24aa','#00897b','#6d4c4
 // Couleurs personnalisées par équipe (index → couleur hex)
 let teamColors = {};
 
+// ── OPTIONS LV — actives uniquement sur les classes "Composition" ─────────
+const OPTS = ['ALL', 'ESP', 'LCE', 'LAT'];
+const OPT_LABEL = { ALL: 'Allemand', ESP: 'Espagnol', LCE: 'LCE', LAT: 'Latin' };
+const OPT_COLOR = { ALL: '#5c6bc0', ESP: '#ef6c00', LCE: '#00897b', LAT: '#8e24aa' };
+// Une classe est en mode "composition de classes" si son nom contient "composition"
+function isCompoClass() {
+  return (classes[currentClassId]?.nom || '').toLowerCase().includes('composition');
+}
+function optsOf(e) { return Array.isArray(e.opts) ? e.opts : []; }
+
 function elevesOf(classId) {
   return classes[classId]?.eleves || {};
 }
@@ -678,6 +708,7 @@ function startListening() {
       G('add-card-title').innerHTML = `➕ Ajouter un élève <span style="font-weight:400;color:var(--primary);font-size:13px;margin-left:6px;">dans ${clsNom}</span>`;
       renderEleves();
       updateStats();
+      applyCompoMode();
     }
   });
 }
@@ -713,6 +744,7 @@ window.selectClass = async id => {
   renderClassBar();
   showTab('eleves');
   renderEleves();
+  applyCompoMode();
 
   // Recharge toutes les équipes par sport
   try {
@@ -864,6 +896,12 @@ window.renderEleves = () => {
                 title="Niveau ${n}">★</span>`).join('')}
             <span style="font-size:11px;color:${col};font-weight:700;margin-left:4px">Niv.${e.nv}</span>
           </div>
+          ${isCompoClass() ? `<div class="opt-chips" title="Options de l'élève (cliquer pour cocher)">
+            ${OPTS.map(o => { const on = optsOf(e).includes(o);
+              return `<span class="opt-chip ${on ? 'on' : 'off'}"
+                style="${on ? `background:${OPT_COLOR[o]};color:#fff;border-color:${OPT_COLOR[o]}` : ''}"
+                onclick="toggleOpt('${e.id}','${o}')">${OPT_LABEL[o]}</span>`; }).join('')}
+          </div>` : ''}
         </div>
         <div class="sact">
           <button class="ico-btn" title="${e.abs ? 'Présent' : 'Absent'}" onclick="togAbs('${e.id}')">${e.abs ? '✅' : '😴'}</button>
@@ -884,7 +922,8 @@ function updateStats() {
     <div class="chip">✅ Présents <strong>${pr.length}</strong></div>
     <div class="chip" style="color:var(--boy)">♂ <strong>${pr.filter(e=>e.sx==='G').length}</strong></div>
     <div class="chip" style="color:var(--girl)">♀ <strong>${pr.filter(e=>e.sx==='F').length}</strong></div>
-    <div class="chip" style="color:var(--red)">😴 <strong>${all.filter(e=>e.abs).length}</strong></div>`;
+    <div class="chip" style="color:var(--red)">😴 <strong>${all.filter(e=>e.abs).length}</strong></div>
+    ${isCompoClass() ? OPTS.map(o => `<div class="chip" style="border:1.5px solid ${OPT_COLOR[o]};color:${OPT_COLOR[o]}">${OPT_LABEL[o]} <strong>${pr.filter(e=>optsOf(e).includes(o)).length}</strong></div>`).join('') : ''}`;
   G('b-el').textContent = all.length;
 
   // Si on est en mode séparé, recalculer les combos disponibles
@@ -907,6 +946,12 @@ window.togAbs = async id => {
 window.setNiveau = async (id, nv) => {
   if (nv < 1 || nv > 5) return;
   await update(ref(db, `users/${uid}/classes/${currentClassId}/eleves/${id}`), { nv });
+};
+window.toggleOpt = async (id, code) => {
+  const e = elevesOf(currentClassId)[id]; if (!e) return;
+  let opts = optsOf(e).slice();
+  opts = opts.includes(code) ? opts.filter(o => o !== code) : [...opts, code];
+  await update(ref(db, `users/${uid}/classes/${currentClassId}/eleves/${id}`), { opts });
 };
 window.delEleve = async id => {
   if (!confirm('Supprimer cet élève ?')) return;
@@ -1446,6 +1491,109 @@ window.compose = async () => {
   showTab('equipes');
 };
 
+// ── RÉPARTITION EN CLASSES ÉQUILIBRÉES (options + niveau + sexe) ──────────
+function applyCompoMode() {
+  const card = G('repart-card');
+  if (card) card.style.display = isCompoClass() ? 'block' : 'none';
+}
+
+const _variance = arr => {
+  if (!arr.length) return 0;
+  const m = arr.reduce((a, b) => a + b, 0) / arr.length;
+  return arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length;
+};
+
+function _scoreRepart(cls) {
+  const sizes = cls.map(c => c.joueurs.length);
+  let s = _variance(sizes) * 6;
+  OPTS.forEach(o => { s += _variance(cls.map(c => c.optCount[o])) * 9; });
+  s += _variance(cls.map(c => c.joueurs.length ? c.nvSum / c.joueurs.length : 0)) * 4;
+  s += _variance(cls.map(c => c.joueurs.length ? c.gCount / c.joueurs.length : 0)) * 4;
+  return s;
+}
+
+function _greedyRepart(eleves, n) {
+  const cls = Array.from({ length: n }, () => ({
+    joueurs: [], optCount: { ALL: 0, ESP: 0, LCE: 0, LAT: 0 }, nvSum: 0, gCount: 0, fCount: 0
+  }));
+  const rar = { ALL: 0, ESP: 0, LCE: 0, LAT: 0 };
+  eleves.forEach(e => optsOf(e).forEach(o => { rar[o]++; }));
+  const constraint = e => optsOf(e).reduce((s, o) => s + 1 / (rar[o] || 1), 0);
+  const order = eleves.map(e => ({ e, c: constraint(e), r: Math.random() }))
+    .sort((a, b) => (b.c - a.c) || (b.e.nv - a.e.nv) || (a.r - b.r))
+    .map(x => x.e);
+
+  for (const e of order) {
+    let bestCost = Infinity;
+    const cand = [];
+    for (let i = 0; i < n; i++) {
+      const c = cls[i];
+      let cost = 0;
+      optsOf(e).forEach(o => { cost += c.optCount[o] * 100; });
+      cost += c.joueurs.length * 12;
+      cost += c.nvSum * 1.2;
+      cost += (e.sx === 'G' ? c.gCount : c.fCount) * 1;
+      cand.push(cost);
+      if (cost < bestCost - 1e-9) bestCost = cost;
+    }
+    const ties = [];
+    for (let i = 0; i < n; i++) if (cand[i] <= bestCost + 1e-9) ties.push(i);
+    const best = ties[Math.floor(Math.random() * ties.length)];
+    const c = cls[best];
+    c.joueurs.push(e);
+    optsOf(e).forEach(o => { c.optCount[o]++; });
+    c.nvSum += e.nv;
+    if (e.sx === 'G') c.gCount++; else c.fCount++;
+  }
+  return cls;
+}
+
+function bestRepart(eleves, n, tries = 60) {
+  let best = null, bestScore = Infinity;
+  for (let k = 0; k < tries; k++) {
+    const cls = _greedyRepart(eleves, n);
+    const sc = _scoreRepart(cls);
+    if (sc < bestScore) { bestScore = sc; best = cls; }
+  }
+  return best;
+}
+
+window.repartirClasses = async () => {
+  if (!currentClassId || !isCompoClass()) return;
+  const n = Math.max(2, Math.min(12, parseInt(G('nclasses').value) || 3));
+  const pr = curEleves().filter(e => !e.abs);
+  if (pr.length < n) { alert(`Pas assez d'élèves présents (${pr.length}) pour ${n} classes.`); return; }
+
+  const cls = bestRepart(pr, n);
+
+  EQ = cls.map((c, i) => {
+    const Gp = c.joueurs.filter(p => p.sx === 'G');
+    const Fp = c.joueurs.filter(p => p.sx === 'F');
+    const merged = [];
+    const maxLen = Math.max(Gp.length, Fp.length);
+    for (let k = 0; k < maxLen; k++) { if (k < Gp.length) merged.push(Gp[k]); if (k < Fp.length) merged.push(Fp[k]); }
+    merged.forEach((p, idx) => p.num = idx + 1);
+    return { id: i, joueurs: merged };
+  });
+
+  const key = 'repartition-classes';
+  const label = `Répartition (${n} classes)`;
+  const eqToSave = EQ.map((t, i) => ({
+    id: t.id, genre: null, color: teamColors[i] || null,
+    joueurs: t.joueurs.map(p => ({ id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num, opts: optsOf(p) }))
+  }));
+  const sportData = { sport: key, label, data: eqToSave, neq: n, mix: 'mixte', bal: 'repart', simil: false, savedAt: Date.now() };
+  await set(ref(db, `users/${uid}/classes/${currentClassId}/equipes_sport/${key}`), sportData);
+  savedSports[key] = sportData;
+  currentSport = key;
+
+  updateEqBadge();
+  renderApsaChips();
+  teamColors = {};
+  renderEQ();
+  showTab('equipes');
+};
+
 function renderEQ() {
   if (!EQ.length) return;
   const pr     = curEleves().filter(e => !e.abs).length;
@@ -1480,7 +1628,7 @@ function renderEQ() {
       ondragleave="dragLeavePlayer(event)"
       ondrop="dropOnPlayer(event)">
       <div class="pnum">${j.num}</div>
-      <div class="pname">${j.nom}</div>
+      <div class="pname">${j.nom}${(Array.isArray(j.opts)&&j.opts.length)?' '+j.opts.map(o=>`<span style="font-size:9px;font-weight:800;color:#fff;background:${OPT_COLOR[o]};padding:1px 5px;border-radius:9px;vertical-align:middle">${o}</span>`).join(' '):''}</div>
       <span style="font-size:18px;font-weight:900;color:${j.sx==='G'?'var(--boy)':'var(--girl)'}">${j.sx==='G'?'♂\uFE0E':'♀\uFE0E'}</span>
     </div>`;
 
