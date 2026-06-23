@@ -192,13 +192,13 @@ input[type=text]{min-width:160px}
 .proj-sortbar{display:flex;align-items:center;gap:6px;padding:7px 12px;background:#f6f8fa;border-bottom:1px solid #eee;flex-shrink:0;flex-wrap:wrap}
 .proj-sortbar select{font-size:13px;padding:4px 6px;border:1.5px solid #cfd6dd;border-radius:7px}
 .proj-sortbar .arrow{cursor:pointer;border:1.5px solid #cfd6dd;background:#fff;border-radius:7px;padding:3px 9px;font-size:14px;font-weight:800}
-.proj-list{overflow:auto;padding:8px;flex:1;min-height:0}
+.proj-list{overflow:auto;padding:6px;flex:1;min-height:0;font-size:18px}
 .proj-list.drop-target-empty{background:#eef6ff;outline:3px dashed #2f6fed;outline-offset:-5px}
-.proj-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;margin-bottom:6px;font-size:19px;cursor:grab}
+.proj-row{display:flex;align-items:center;gap:.5em;padding:.26em .55em;border-radius:.5em;margin-bottom:.2em;font-size:1em;line-height:1.15;cursor:grab}
 .proj-row.dragging{opacity:.4}
 .proj-row.insert-above{box-shadow:0 -3px 0 0 #2f6fed}
 .proj-row.insert-below{box-shadow:0 3px 0 0 #2f6fed}
-.proj-num{width:30px;height:30px;border-radius:50%;background:#eef1f5;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#5a6573;flex-shrink:0}
+.proj-num{width:1.7em;height:1.7em;border-radius:50%;background:#eef1f5;display:flex;align-items:center;justify-content:center;font-size:.72em;font-weight:800;color:#5a6573;flex-shrink:0}
 @media print{#proj-overlay{display:none!important}}
 
 @media(max-width:600px){.content{padding:12px}input[type=text]{min-width:unset;width:100%}}
@@ -2200,9 +2200,9 @@ function renderProjection() {
       ondragover="dragOverPlayer(event)" ondragleave="dragLeavePlayer(event)" ondrop="dropOnPlayer(event)"
       style="background:${j.sx === 'G' ? '#e8f0fe' : '#fce4ec'}">
       <span class="proj-num">${j.num}</span>
-      <span style="flex:1;font-weight:600">${j.nom}${optsOf(j).length ? ' ' + optsOf(j).map(o => `<span style="font-size:11px;font-weight:800;color:#fff;background:${optColor(o)};padding:1px 7px;border-radius:10px;vertical-align:middle">${o}</span>`).join(' ') : ''}</span>
-      <span style="letter-spacing:1px;white-space:nowrap;font-size:15px">${[1, 2, 3, 4, 5].map(k => `<span style="color:${k <= j.nv ? nvCol[j.nv] : '#dadce0'}">★</span>`).join('')}</span>
-      <span style="font-size:20px;font-weight:900;color:${j.sx === 'G' ? 'var(--boy)' : 'var(--girl)'}">${j.sx === 'G' ? '♂\uFE0E' : '♀\uFE0E'}</span>
+      <span style="flex:1;font-weight:600">${j.nom}${optsOf(j).length ? ' ' + optsOf(j).map(o => `<span style="font-size:.6em;font-weight:800;color:#fff;background:${optColor(o)};padding:.1em .5em;border-radius:1em;vertical-align:middle">${o}</span>`).join(' ') : ''}</span>
+      <span style="letter-spacing:1px;white-space:nowrap;font-size:.82em">${[1, 2, 3, 4, 5].map(k => `<span style="color:${k <= j.nv ? nvCol[j.nv] : '#dadce0'}">★</span>`).join('')}</span>
+      <span style="font-size:1.05em;font-weight:900;color:${j.sx === 'G' ? 'var(--boy)' : 'var(--girl)'}">${j.sx === 'G' ? '♂\uFE0E' : '♀\uFE0E'}</span>
     </div>`;
 
   wrap.innerHTML = EQ.map((team, i) => {
@@ -2224,7 +2224,26 @@ function renderProjection() {
       </div>
     </div>`;
   }).join('');
+
+  fitProjection();
 }
+
+// Réduit la taille du texte de chaque colonne pour que tout tienne sans scroller
+function fitProjection() {
+  requestAnimationFrame(() => {
+    document.querySelectorAll('#proj-cols .proj-list').forEach(list => {
+      let fs = 18;
+      list.style.fontSize = fs + 'px';
+      let guard = 0;
+      while (list.scrollHeight > list.clientHeight + 1 && fs > 8 && guard < 60) {
+        fs -= 0.5; list.style.fontSize = fs + 'px'; guard++;
+      }
+    });
+  });
+}
+// Réajuste si la fenêtre / le plein écran change
+window.addEventListener('resize', () => { if (projOpen) fitProjection(); });
+document.addEventListener('fullscreenchange', () => { if (projOpen) setTimeout(fitProjection, 60); });
 
 // ── EXPORT EXCEL ─────────────────────────────────────────────────────
 window.exportExcel = () => {
