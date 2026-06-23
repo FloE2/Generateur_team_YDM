@@ -316,8 +316,10 @@ input[type=text]{min-width:160px}
         <div class="card repart-card" id="repart-card" style="display:none;border:2px solid var(--primary)">
           <div class="ct">🎓 Répartir en classes équilibrées <span style="font-weight:400;color:var(--muted);font-size:13px">(options · niveau · sexe)</span></div>
           <p style="color:var(--muted);font-size:13px;margin:-6px 0 14px">
-            Crée des classes d'effectif équivalent, en répartissant équitablement chaque option (Latin, Allemand, LCE, Espagnol) ainsi que les niveaux et les sexes. Relancez « Répartir » pour obtenir une autre proposition, puis ajustez à la main par glisser-déposer dans l'onglet Équipes.
+            Crée des classes d'effectif équivalent. Pour chaque option, choisis si elle doit être <strong>répartie</strong> (étalée sur toutes les classes) ou <strong>regroupée</strong> (tous les élèves dans une même classe). Niveaux et sexes restent équilibrés. Relance « Répartir » pour une autre proposition, puis ajuste par glisser-déposer dans l'onglet Équipes.
           </p>
+          <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Comportement par option</div>
+          <div id="opt-modes" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px"></div>
           <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
             <div class="si"><label>Nombre de classes</label>
               <input type="number" id="nclasses" value="3" min="2" max="12" style="width:110px">
@@ -1499,9 +1501,29 @@ window.compose = async () => {
 };
 
 // ── RÉPARTITION EN CLASSES ÉQUILIBRÉES (options + niveau + sexe) ──────────
+// Comportement par option : 'spread' = étalé sur toutes les classes, 'group' = tous dans une même classe
+let optMode = { ALL: 'spread', ESP: 'spread', LCE: 'spread', LAT: 'spread' };
+
+function renderOptModes() {
+  const el = G('opt-modes'); if (!el) return;
+  el.innerHTML = OPTS.map(o => {
+    const g = optMode[o] === 'group';
+    return `<button onclick="toggleOptMode('${o}')"
+      style="display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:20px;cursor:pointer;
+             font-size:13px;font-weight:700;border:2px solid ${OPT_COLOR[o]};
+             background:${g ? OPT_COLOR[o] : '#fff'};color:${g ? '#fff' : OPT_COLOR[o]}">
+      ${OPT_LABEL[o]} · ${g ? '👥 Regrouper' : '⚖️ Répartir'}</button>`;
+  }).join('');
+}
+window.toggleOptMode = o => {
+  optMode[o] = optMode[o] === 'group' ? 'spread' : 'group';
+  renderOptModes();
+};
+
 function applyCompoMode() {
   const card = G('repart-card');
   if (card) card.style.display = isCompoClass() ? 'block' : 'none';
+  if (isCompoClass()) renderOptModes();
 }
 
 const _variance = arr => {
@@ -1510,33 +1532,58 @@ const _variance = arr => {
   return arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length;
 };
 
-function _scoreRepart(cls) {
+function _scoreRepart(cls, grouped) {
   const sizes = cls.map(c => c.joueurs.length);
   let s = _variance(sizes) * 6;
-  OPTS.forEach(o => { s += _variance(cls.map(c => c.optCount[o])) * 9; });
+  // n'équilibre par option QUE les options en mode "répartir"
+  OPTS.filter(o => !grouped.includes(o)).forEach(o => { s += _variance(cls.map(c => c.optCount[o])) * 9; });
   s += _variance(cls.map(c => c.joueurs.length ? c.nvSum / c.joueurs.length : 0)) * 4;
   s += _variance(cls.map(c => c.joueurs.length ? c.gCount / c.joueurs.length : 0)) * 4;
   return s;
 }
 
-function _greedyRepart(eleves, n) {
+function _addTo(c, e) {
+  c.joueurs.push(e);
+  optsOf(e).forEach(o => { c.optCount[o] = (c.optCount[o] || 0) + 1; });
+  c.nvSum += e.nv;
+  if (e.sx === 'G') c.gCount++; else c.fCount++;
+}
+
+function _greedyRepart(eleves, n, grouped) {
   const cls = Array.from({ length: n }, () => ({
     joueurs: [], optCount: { ALL: 0, ESP: 0, LCE: 0, LAT: 0 }, nvSum: 0, gCount: 0, fCount: 0
   }));
   const rar = { ALL: 0, ESP: 0, LCE: 0, LAT: 0 };
   eleves.forEach(e => optsOf(e).forEach(o => { rar[o]++; }));
+
+  // 1) Pré-placement des options à regrouper : chacune reçoit sa propre classe.
+  // On traite les plus rares d'abord pour gérer les cas d'élèves cumulant 2 options regroupées.
+  const placed = new Set();
+  const groupedSorted = [...grouped].sort((a, b) => (rar[a] || 0) - (rar[b] || 0));
+  groupedSorted.forEach((opt, gi) => {
+    if (gi >= n) return;
+    const target = cls[gi];
+    eleves.forEach(e => {
+      if (placed.has(e.id)) return;
+      if (optsOf(e).includes(opt)) { _addTo(target, e); placed.add(e.id); }
+    });
+  });
+
+  // 2) Distribution équilibrée du reste (sur toutes les classes, y compris celles déjà amorcées).
   const constraint = e => optsOf(e).reduce((s, o) => s + 1 / (rar[o] || 1), 0);
-  const order = eleves.map(e => ({ e, c: constraint(e), r: Math.random() }))
+  const rest = eleves.filter(e => !placed.has(e.id))
+    .map(e => ({ e, c: constraint(e), r: Math.random() }))
     .sort((a, b) => (b.c - a.c) || (b.e.nv - a.e.nv) || (a.r - b.r))
     .map(x => x.e);
 
-  for (const e of order) {
+  for (const e of rest) {
     let bestCost = Infinity;
     const cand = [];
     for (let i = 0; i < n; i++) {
       const c = cls[i];
       let cost = 0;
-      optsOf(e).forEach(o => { cost += c.optCount[o] * 100; });
+      // ne pénalise que les options "réparties"
+      optsOf(e).forEach(o => { if (!grouped.includes(o)) cost += c.optCount[o] * 100; });
       cost += c.joueurs.length * 12;
       cost += c.nvSum * 1.2;
       cost += (e.sx === 'G' ? c.gCount : c.fCount) * 1;
@@ -1545,21 +1592,16 @@ function _greedyRepart(eleves, n) {
     }
     const ties = [];
     for (let i = 0; i < n; i++) if (cand[i] <= bestCost + 1e-9) ties.push(i);
-    const best = ties[Math.floor(Math.random() * ties.length)];
-    const c = cls[best];
-    c.joueurs.push(e);
-    optsOf(e).forEach(o => { c.optCount[o]++; });
-    c.nvSum += e.nv;
-    if (e.sx === 'G') c.gCount++; else c.fCount++;
+    _addTo(cls[ties[Math.floor(Math.random() * ties.length)]], e);
   }
   return cls;
 }
 
-function bestRepart(eleves, n, tries = 60) {
+function bestRepart(eleves, n, grouped, tries = 60) {
   let best = null, bestScore = Infinity;
   for (let k = 0; k < tries; k++) {
-    const cls = _greedyRepart(eleves, n);
-    const sc = _scoreRepart(cls);
+    const cls = _greedyRepart(eleves, n, grouped);
+    const sc = _scoreRepart(cls, grouped);
     if (sc < bestScore) { bestScore = sc; best = cls; }
   }
   return best;
@@ -1568,10 +1610,15 @@ function bestRepart(eleves, n, tries = 60) {
 window.repartirClasses = async () => {
   if (!currentClassId || !isCompoClass()) return;
   const n = Math.max(2, Math.min(12, parseInt(G('nclasses').value) || 3));
+  const grouped = OPTS.filter(o => optMode[o] === 'group');
+  if (grouped.length > n) {
+    alert(`Tu demandes à regrouper ${grouped.length} options, mais il n'y a que ${n} classes. Augmente le nombre de classes ou regroupe moins d'options.`);
+    return;
+  }
   const pr = curEleves().filter(e => !e.abs);
   if (pr.length < n) { alert(`Pas assez d'élèves présents (${pr.length}) pour ${n} classes.`); return; }
 
-  const cls = bestRepart(pr, n);
+  const cls = bestRepart(pr, n, grouped);
 
   EQ = cls.map((c, i) => {
     const Gp = c.joueurs.filter(p => p.sx === 'G');
@@ -1584,7 +1631,8 @@ window.repartirClasses = async () => {
   });
 
   const key = 'repartition-classes';
-  const label = `Répartition (${n} classes)`;
+  const grpLabel = grouped.length ? ` · ${grouped.map(o => OPT_LABEL[o]).join('+')} regroupé${grouped.length > 1 ? 's' : ''}` : '';
+  const label = `Répartition (${n} classes)${grpLabel}`;
   const eqToSave = EQ.map((t, i) => ({
     id: t.id, genre: null, color: teamColors[i] || null,
     joueurs: t.joueurs.map(p => ({ id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num, opts: optsOf(p) }))
