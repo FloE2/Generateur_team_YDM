@@ -220,11 +220,12 @@ input[type=text]{min-width:160px}
   <div class="login-card">
     <div class="logo" style="font-size:42px;font-weight:900;letter-spacing:-2px;background:linear-gradient(135deg,#1a73e8,#0d47a1);-webkit-background-clip:text;-webkit-text-fill-color:transparent">YDM</div>
     <h1>EPS Équipes</h1>
-    <p>Compositeur d'équipes pour vos cours d'EPS.<br>Vos données sauvegardées sur tous vos appareils.</p>
+    <p>Compositeur d'équipes pour vos cours d'EPS.<br>Espace partagé de l'équipe EPS — accès réservé aux comptes autorisés.</p>
     <button class="btn-google" onclick="loginGoogle()">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
       Continuer avec Google
     </button>
+    <div id="login-error" style="display:none;margin-top:16px;padding:12px 14px;border-radius:10px;background:#fce8e6;color:#c5221f;font-size:13px;line-height:1.5;text-align:left"></div>
   </div>
 </div>
 
@@ -236,6 +237,7 @@ input[type=text]{min-width:160px}
     <div class="user-info">
       <img class="user-avatar" id="user-avatar" src="" alt="">
       <span class="user-name" id="user-name"></span>
+      <span title="Données partagées avec l'équipe EPS" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.18);padding:3px 10px;border-radius:12px;white-space:nowrap">👥 Espace partagé</span>
       <button class="btn-logout" onclick="logout()">⏻ Déconnexion</button>
     </div>
   </header>
@@ -682,6 +684,17 @@ const fbApp = initializeApp(firebaseConfig);
 const auth  = getAuth(fbApp);
 const db    = getDatabase(fbApp);
 const provider = new GoogleAuthProvider();
+provider.setCustomParameters({ prompt: 'select_account' }); // permet de choisir le bon compte Gmail
+
+// ════════════════════════════════════════════════════════════════════
+// 👥 ESPACE PARTAGÉ — À COMPLÉTER : les adresses Gmail autorisées
+//    (les mêmes adresses doivent figurer dans les règles Firebase)
+// ════════════════════════════════════════════════════════════════════
+const EQUIPE_EPS = [
+  'florianeude@gmail.com',      // Florian EUDE
+  'cosperecemeric@gmail.com'    // collègue EPS
+].map(e => e.trim().toLowerCase());
+const ESPACE = 'espaces/eps-ydm';  // dossier commun dans la base Firebase
 
 // ── STATE ────────────────────────────────────────────
 let uid = null;
@@ -784,7 +797,7 @@ window.detectClasses = async () => {
   const ids = Object.keys(found);
   if (!ids.length) { alert("Aucun élève retrouvé dans vos autres classes."); return; }
   const u = {};
-  ids.forEach(id => { u[`users/${uid}/classes/${currentClassId}/eleves/${id}/cl`] = found[id]; });
+  ids.forEach(id => { u[`${ESPACE}/classes/${currentClassId}/eleves/${id}/cl`] = found[id]; });
   await update(ref(db), u);
   const recap = {};
   Object.values(found).forEach(c => recap[c] = (recap[c] || 0) + 1);
@@ -807,7 +820,7 @@ window.cycleCl = async id => {
   const cur = clTrim(e.cl);
   const i = list.indexOf(cur);
   const next = i < 0 ? list[0] : (i + 1 < list.length ? list[i + 1] : '');
-  await update(ref(db, `users/${uid}/classes/${currentClassId}/eleves/${id}`), { cl: next });
+  await update(ref(db, `${ESPACE}/classes/${currentClassId}/eleves/${id}`), { cl: next });
 };
 
 // Met à jour tous les éléments d'interface liés aux classes d'origine
@@ -944,12 +957,25 @@ window.loginGoogle = async () => {
   catch(e) { alert('Erreur : ' + e.message); }
 };
 window.logout = async () => {
-  if (dbListener) { off(ref(db, `users/${uid}/classes`)); dbListener = null; }
+  if (dbListener) { off(ref(db, `${ESPACE}/classes`)); dbListener = null; }
   await signOut(auth);
 };
 
-onAuthStateChanged(auth, user => {
+const showLoginError = msg => {
+  const el = G('login-error');
+  if (el) { el.innerHTML = msg; el.style.display = msg ? 'block' : 'none'; }
+};
+
+onAuthStateChanged(auth, async user => {
   if (user) {
+    const email = (user.email || '').toLowerCase();
+    if (!EQUIPE_EPS.includes(email)) {
+      // Compte non autorisé : on le déconnecte immédiatement
+      showLoginError(`⛔ Le compte <strong>${user.email || 'inconnu'}</strong> n'est pas autorisé.<br>Connectez-vous avec un compte Gmail de l'équipe EPS.`);
+      await signOut(auth);
+      return;
+    }
+    showLoginError('');
     uid = user.uid;
     G('login-screen').style.display = 'none';
     G('app').style.display  = 'block';
@@ -965,10 +991,11 @@ onAuthStateChanged(auth, user => {
 
 // ── REALTIME LISTENER ────────────────────────────────
 function startListening() {
-  const classesRef = ref(db, `users/${uid}/classes`);
+  const classesRef = ref(db, `${ESPACE}/classes`);
   if (dbListener) off(classesRef);
   dbListener = onValue(classesRef, async snap => {
     classes = snap.val() || {};
+    if (!Object.keys(classes).length && await proposerMigration()) return; // le listener se relancera après la copie
     const ids = Object.keys(classes);
 
     renderClassBar();
@@ -991,7 +1018,27 @@ function startListening() {
       updateStats();
       applyCompoMode();
     }
+  }, err => {
+    // Refus d'accès par les règles Firebase
+    alert("⛔ Accès refusé par la base de données.\n\nVérifiez que votre adresse Gmail figure bien dans les règles Firebase de l'espace partagé.\n\n(" + err.message + ")");
   });
+}
+
+// ── MIGRATION : copie les anciennes classes personnelles vers l'espace partagé ──
+let migrationProposee = false;
+async function proposerMigration() {
+  if (migrationProposee) return false;
+  migrationProposee = true;
+  try {
+    const snap = await new Promise((res, rej) => onValue(ref(db, `users/${uid}/classes`), res, rej, { onlyOnce: true }));
+    const perso = snap.val();
+    const nb = perso ? Object.keys(perso).length : 0;
+    if (!nb) return false;
+    const noms = Object.values(perso).map(c => c.nom).join(', ');
+    if (!confirm(`L'espace partagé est vide.\n\nVous avez ${nb} classe(s) dans votre ancien espace personnel :\n${noms}\n\nLes copier dans l'espace partagé ? (vos données personnelles ne sont pas supprimées)`)) return false;
+    await set(ref(db, `${ESPACE}/classes`), perso);
+    return true;
+  } catch (e) { return false; }
 }
 
 // ── CLASS BAR ────────────────────────────────────────
@@ -1030,7 +1077,7 @@ window.selectClass = async id => {
   // Recharge toutes les équipes par sport
   try {
     const snap = await new Promise(res => {
-      const r = ref(db, `users/${uid}/classes/${id}/equipes_sport`);
+      const r = ref(db, `${ESPACE}/classes/${id}/equipes_sport`);
       onValue(r, res, { onlyOnce: true });
     });
     const all = snap.val() || {};
@@ -1079,7 +1126,7 @@ window.closeClassModal = () => G('modal-class').classList.remove('open');
 window.saveClass = async () => {
   const nom = G('class-inp').value.trim();
   if (!nom) return;
-  const r = push(ref(db, `users/${uid}/classes`));
+  const r = push(ref(db, `${ESPACE}/classes`));
   await set(r, { nom, eleves: {} });
   closeClassModal();
 };
@@ -1087,7 +1134,7 @@ window.deleteClass = async id => {
   const cls = classes[id]; if (!cls) return;
   const nb = Object.keys(cls.eleves || {}).length;
   if (!confirm(`Supprimer la classe "${cls.nom}" et ses ${nb} élève(s) ?`)) return;
-  await remove(ref(db, `users/${uid}/classes/${id}`));
+  await remove(ref(db, `${ESPACE}/classes/${id}`));
 };
 
 // ── TABS ─────────────────────────────────────────────
@@ -1139,7 +1186,7 @@ window.addEleve = async () => {
   if (!nom) { G('inp').focus(); return; }
   const sx = document.querySelector('input[name=sx]:checked').value;
   const nv = parseInt(document.querySelector('input[name=nv]:checked').value);
-  const r  = push(ref(db, `users/${uid}/classes/${currentClassId}/eleves`));
+  const r  = push(ref(db, `${ESPACE}/classes/${currentClassId}/eleves`));
   const cl = clTrim(G('inp-cl').value);
   await set(r, cl ? { nom, sx, nv, abs: false, cl } : { nom, sx, nv, abs: false });
   G('inp').value = '';  // la classe reste remplie pour enchaîner les saisies
@@ -1231,31 +1278,31 @@ function updateStats() {
 
 window.togAbs = async id => {
   const e = elevesOf(currentClassId)[id]; if (!e) return;
-  await update(ref(db, `users/${uid}/classes/${currentClassId}/eleves/${id}`), { abs: !e.abs });
+  await update(ref(db, `${ESPACE}/classes/${currentClassId}/eleves/${id}`), { abs: !e.abs });
 };
 
 window.setNiveau = async (id, nv) => {
   if (nv < 1 || nv > 5) return;
-  await update(ref(db, `users/${uid}/classes/${currentClassId}/eleves/${id}`), { nv });
+  await update(ref(db, `${ESPACE}/classes/${currentClassId}/eleves/${id}`), { nv });
 };
 window.toggleOpt = async (id, code) => {
   const e = elevesOf(currentClassId)[id]; if (!e) return;
   let opts = optsOf(e).slice();
   opts = opts.includes(code) ? opts.filter(o => o !== code) : [...opts, code];
-  await update(ref(db, `users/${uid}/classes/${currentClassId}/eleves/${id}`), { opts });
+  await update(ref(db, `${ESPACE}/classes/${currentClassId}/eleves/${id}`), { opts });
 };
 window.delEleve = async id => {
   if (!confirm('Supprimer cet élève ?')) return;
-  await remove(ref(db, `users/${uid}/classes/${currentClassId}/eleves/${id}`));
+  await remove(ref(db, `${ESPACE}/classes/${currentClassId}/eleves/${id}`));
 };
 window.allPresent = async () => {
   const u = {};
-  curEleves().forEach(e => { u[`users/${uid}/classes/${currentClassId}/eleves/${e.id}/abs`] = false; });
+  curEleves().forEach(e => { u[`${ESPACE}/classes/${currentClassId}/eleves/${e.id}/abs`] = false; });
   await update(ref(db), u);
 };
 window.allAbsent = async () => {
   const u = {};
-  curEleves().forEach(e => { u[`users/${uid}/classes/${currentClassId}/eleves/${e.id}/abs`] = true; });
+  curEleves().forEach(e => { u[`${ESPACE}/classes/${currentClassId}/eleves/${e.id}/abs`] = true; });
   await update(ref(db), u);
 };
 
@@ -1276,7 +1323,7 @@ window.saveEdit = async () => {
   const sx  = document.querySelector('input[name=esx]:checked').value;
   const nv  = parseInt(document.querySelector('input[name=env]:checked').value);
   const cl  = clTrim(G('en-cl').value);
-  await update(ref(db, `users/${uid}/classes/${currentClassId}/eleves/${editEleveId}`), { nom, sx, nv, cl });
+  await update(ref(db, `${ESPACE}/classes/${currentClassId}/eleves/${editEleveId}`), { nom, sx, nv, cl });
   closeM();
 };
 
@@ -1359,7 +1406,7 @@ window.deleteApsa = async key => {
     ? `Supprimer l'APSA "${apsa.label}" et ses ${apsa.data.length} équipe(s) sauvegardée(s) ?`
     : `Supprimer l'APSA "${apsa.label}" ?`;
   if (!confirm(msg)) return;
-  if (hasTeams) await remove(ref(db, `users/${uid}/classes/${currentClassId}/equipes_sport/${key}`));
+  if (hasTeams) await remove(ref(db, `${ESPACE}/classes/${currentClassId}/equipes_sport/${key}`));
   delete savedSports[key];
   if (currentSport === key) {
     const remaining = Object.keys(savedSports).filter(k => savedSports[k]?.data?.length);
@@ -1426,7 +1473,7 @@ window.switchSportTab = key => {
 window.deleteSportTeams = async key => {
   const apsa = savedSports[key];
   if (!confirm(`Supprimer les équipes "${apsa?.label || key}" ?`)) return;
-  await remove(ref(db, `users/${uid}/classes/${currentClassId}/equipes_sport/${key}`));
+  await remove(ref(db, `${ESPACE}/classes/${currentClassId}/equipes_sport/${key}`));
   if (savedSports[key]) savedSports[key].data = [];
   if (currentSport === key) {
     const remaining = Object.keys(savedSports).filter(k => savedSports[k]?.data?.length);
@@ -1805,7 +1852,7 @@ window.compose = async () => {
     mixCl: !!G('mixcl')?.checked,
     savedAt: Date.now()
   };
-  await set(ref(db, `users/${uid}/classes/${currentClassId}/equipes_sport/${currentSport}`), sportData);
+  await set(ref(db, `${ESPACE}/classes/${currentClassId}/equipes_sport/${currentSport}`), sportData);
   savedSports[currentSport] = sportData;
 
   updateEqBadge();
@@ -1953,7 +2000,7 @@ window.repartirClasses = async () => {
     joueurs: t.joueurs.map(p => ({ id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num, cl: clOf(p), opts: optsOf(p) }))
   }));
   const sportData = { sport: key, label, data: eqToSave, neq: n, mix: 'mixte', bal: 'repart', simil: false, savedAt: Date.now() };
-  await set(ref(db, `users/${uid}/classes/${currentClassId}/equipes_sport/${key}`), sportData);
+  await set(ref(db, `${ESPACE}/classes/${currentClassId}/equipes_sport/${key}`), sportData);
   savedSports[key] = sportData;
   currentSport = key;
 
@@ -2224,8 +2271,8 @@ window.confirmImport = async () => {
 
   const updates = {};
   importRows.forEach(e => {
-    const key = push(ref(db, `users/${uid}/classes/${currentClassId}/eleves`)).key;
-    updates[`users/${uid}/classes/${currentClassId}/eleves/${key}`] = {
+    const key = push(ref(db, `${ESPACE}/classes/${currentClassId}/eleves`)).key;
+    updates[`${ESPACE}/classes/${currentClassId}/eleves/${key}`] = {
       nom: e.nom, sx: e.sx, nv: e.nv, abs: false, ...(e.cl ? { cl: e.cl } : {})
     };
   });
@@ -2250,7 +2297,7 @@ window.changeTeamColor = (teamIdx, color) => {
     const sportData = { ...(savedSports[currentSport] || {}), data: eqToSave, savedAt: Date.now() };
     savedSports[currentSport] = sportData;
     import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js").then(({ ref: fbRef, set: fbSet }) => {
-      fbSet(fbRef(db, `users/${uid}/classes/${currentClassId}/equipes_sport/${currentSport}`), sportData);
+      fbSet(fbRef(db, `${ESPACE}/classes/${currentClassId}/equipes_sport/${currentSport}`), sportData);
     }).catch(() => {});
   }
 };
@@ -2388,7 +2435,7 @@ function persistEQ() {
   }));
   const sportData = { ...(savedSports[currentSport] || {}), data: eqToSave, savedAt: Date.now() };
   savedSports[currentSport] = sportData;
-  set(ref(db, `users/${uid}/classes/${currentClassId}/equipes_sport/${currentSport}`), sportData).catch(() => {});
+  set(ref(db, `${ESPACE}/classes/${currentClassId}/equipes_sport/${currentSport}`), sportData).catch(() => {});
 }
 
 // ── TRI PAR COLONNE ──────────────────────────────────────────
@@ -2650,7 +2697,7 @@ window.addEvalGrid = async () => {
   const grid = { label, criteres: [], notes: {} };
   evalGrids[key] = grid;
   currentGrid = key;
-  await set(ref(db, `users/${uid}/classes/${currentClassId}/eval/${key}`), grid);
+  await set(ref(db, `${ESPACE}/classes/${currentClassId}/eval/${key}`), grid);
   G('eval-grid-input').value = '';
   updateEvalAddBtn();
   renderEvalGridTabs();
@@ -2666,7 +2713,7 @@ window.selectEvalGrid = key => {
 window.deleteEvalGrid = async key => {
   const g = evalGrids[key];
   if (!confirm(`Supprimer la grille "${g?.label || key}" et toutes les notes ?`)) return;
-  await remove(ref(db, `users/${uid}/classes/${currentClassId}/eval/${key}`));
+  await remove(ref(db, `${ESPACE}/classes/${currentClassId}/eval/${key}`));
   delete evalGrids[key];
   if (currentGrid === key) {
     currentGrid = Object.keys(evalGrids)[0] || null;
@@ -2727,7 +2774,7 @@ window.saveCritere = async () => {
   } else {
     grid.criteres.push({ id: 'c' + Date.now(), nom, max });
   }
-  await set(ref(db, `users/${uid}/classes/${currentClassId}/eval/${currentGrid}/criteres`), grid.criteres);
+  await set(ref(db, `${ESPACE}/classes/${currentClassId}/eval/${currentGrid}/criteres`), grid.criteres);
   closeCritereModal();
   renderEvalContent();
 };
@@ -2737,7 +2784,7 @@ window.deleteCritere = async id => {
   grid.criteres = grid.criteres.filter(c => c.id !== id);
   // Supprimer aussi les notes liées à ce critère
   Object.keys(grid.notes || {}).forEach(eid => { if (grid.notes[eid]) delete grid.notes[eid][id]; });
-  await update(ref(db, `users/${uid}/classes/${currentClassId}/eval/${currentGrid}`), {
+  await update(ref(db, `${ESPACE}/classes/${currentClassId}/eval/${currentGrid}`), {
     criteres: grid.criteres, notes: grid.notes || {}
   });
   renderEvalContent();
@@ -2749,7 +2796,7 @@ window.moveCritere = async (id, dir) => {
   const newIdx = idx + dir;
   if (newIdx < 0 || newIdx >= grid.criteres.length) return;
   [grid.criteres[idx], grid.criteres[newIdx]] = [grid.criteres[newIdx], grid.criteres[idx]];
-  await set(ref(db, `users/${uid}/classes/${currentClassId}/eval/${currentGrid}/criteres`), grid.criteres);
+  await set(ref(db, `${ESPACE}/classes/${currentClassId}/eval/${currentGrid}/criteres`), grid.criteres);
   renderEvalContent();
 };
 
@@ -2765,7 +2812,7 @@ window.setNote = async (eleveId, critereId, val, max) => {
   if (!grid.notes[eleveId]) grid.notes[eleveId] = {};
   grid.notes[eleveId][critereId] = numVal;
 
-  await set(ref(db, `users/${uid}/classes/${currentClassId}/eval/${currentGrid}/notes/${eleveId}/${critereId}`), numVal);
+  await set(ref(db, `${ESPACE}/classes/${currentClassId}/eval/${currentGrid}/notes/${eleveId}/${critereId}`), numVal);
   // Met à jour la ligne totale dans le DOM sans re-render
   updateEleveTotal(eleveId);
 };
@@ -2926,7 +2973,7 @@ window.exportEvalExcel = () => {
 async function loadEvalGrids(classId) {
   try {
     const snap = await new Promise(res => {
-      onValue(ref(db, `users/${uid}/classes/${classId}/eval`), res, { onlyOnce: true });
+      onValue(ref(db, `${ESPACE}/classes/${classId}/eval`), res, { onlyOnce: true });
     });
     evalGrids = snap.val() || {};
     // Normalise criteres/notes (Firebase peut les omettre si vides)
