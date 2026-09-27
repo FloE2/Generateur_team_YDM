@@ -206,6 +206,11 @@ input[type=text]{min-width:160px}
   .tabs,header,.class-bar,.btn,.sact,.sw,#add-card{display:none!important}
   .panel.active{display:block!important}body{background:#fff}
 }
+.cl-badge{display:inline-flex;align-items:center;font-size:11px;font-weight:800;color:#fff;padding:1px 8px;border-radius:10px;line-height:1.5;white-space:nowrap;vertical-align:middle;cursor:pointer}
+.cl-badge.cl-none{background:#fff;color:var(--muted);border:1.5px dashed #c4c7cc}
+.cl-strip{padding:6px 12px;border-bottom:1px solid var(--border);background:#fafbfc;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.mixcl-box{margin-top:16px;padding:12px 14px;border:2px solid #00897b;border-radius:10px;background:#e0f2f1;display:flex;align-items:center;gap:10px;cursor:pointer}
+.mixcl-box input{width:20px;height:20px;accent-color:#00897b;cursor:pointer}
 </style>
 </head>
 <body>
@@ -291,9 +296,14 @@ input[type=text]{min-width:160px}
         <div class="card" id="add-card">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
             <div class="ct" id="add-card-title" style="margin:0">➕ Ajouter un élève</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-sm" id="btn-detect-cl" style="display:none;background:#e0f2f1;color:#00695c;border:1.5px solid #80cbc4" onclick="detectClasses()" title="Cherche chaque élève dans vos autres classes (6A, 6B…) et note sa classe d'origine">
+              🔍 Retrouver les classes
+            </button>
             <button class="btn btn-sm" style="background:#e8f0fe;color:var(--primary);border:1.5px solid #aecbfa" onclick="openImport()">
               📥 Importer CSV / Excel
             </button>
+            </div>
           </div>
           <div class="row">
             <div class="fg">
@@ -317,6 +327,11 @@ input[type=text]{min-width:160px}
                 <input type="radio" name="nv" id="l1" value="1"><label for="l1" title="Débutant">★</label>
               </div>
             </div>
+            <div class="fg">
+              <label>Classe <span style="font-weight:400;text-transform:none">(facultatif)</span></label>
+              <input type="text" id="inp-cl" list="cl-list" placeholder="Ex : 6A" style="width:110px" onkeydown="if(event.key==='Enter')addEleve()">
+              <datalist id="cl-list"></datalist>
+            </div>
             <div class="fg"><label>&nbsp;</label>
               <button class="btn btn-b" onclick="addEleve()">➕ Ajouter</button>
             </div>
@@ -330,6 +345,7 @@ input[type=text]{min-width:160px}
           <select id="fsx" onchange="renderEleves()" style="padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px">
             <option value="">Tous</option><option value="G">♂ Garçons</option><option value="F">♀ Filles</option>
           </select>
+          <select id="fcl" onchange="renderEleves()" style="display:none;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px"></select>
           <button class="btn btn-sm" style="background:#e8f5e9;color:#2e7d32" onclick="allPresent()">✅ Tous présents</button>
           <button class="btn btn-sm" style="background:var(--absent);color:var(--red)" onclick="allAbsent()">😴 Tous absents</button>
         </div>
@@ -376,12 +392,21 @@ input[type=text]{min-width:160px}
             </div>
             <!-- Champs mixte uniquement -->
             <div id="si-neq" class="si"><label>Nombre d'équipes</label>
-              <input type="number" id="neq" value="2" min="2" max="12" style="width:110px" oninput="preview()">
+              <input type="number" id="neq" value="2" min="2" max="30" style="width:110px" oninput="preview()">
             </div>
             <div id="si-njoueurs" class="si"><label>Joueurs par équipe</label>
               <input type="number" id="njoueurs" value="5" min="1" max="20" style="width:110px" oninput="preview()">
             </div>
           </div>
+
+          <!-- Mélange des classes (groupes composés de plusieurs classes) -->
+          <label class="mixcl-box" id="mixcl-wrap" style="display:none">
+            <input type="checkbox" id="mixcl" checked onchange="onMixClChange()">
+            <div>
+              <div style="font-weight:800;color:#00695c;font-size:14px">🏫 Mélanger les classes dans chaque équipe</div>
+              <div style="font-size:12px;color:#37474f" id="mixcl-info">Chaque équipe reçoit autant d'élèves de chaque classe (ex : équipe de 4 → 2 + 2).</div>
+            </div>
+          </label>
 
           <!-- Créateur d'APSA libre -->
           <div style="margin-top:18px;padding-top:16px;border-top:1.5px solid var(--border)">
@@ -520,6 +545,7 @@ input[type=text]{min-width:160px}
     <h3>✏️ Modifier l'élève</h3>
     <div style="display:flex;flex-direction:column;gap:14px">
       <div class="fg"><label>Prénom / Nom</label><input type="text" id="en2" style="width:100%"></div>
+      <div class="fg"><label>Classe d'origine <span style="font-weight:400;text-transform:none">(facultatif)</span></label><input type="text" id="en-cl" list="cl-list" placeholder="Ex : 6A" style="width:140px"></div>
       <div class="fg"><label>Sexe</label>
         <div class="gt">
           <input type="radio" name="esx" id="esg" value="G"><label for="esg">♂ Garçon</label>
@@ -581,7 +607,8 @@ input[type=text]{min-width:160px}
               <td style="padding:5px 10px">MARTIN</td><td style="padding:5px 10px">Lucas</td><td style="padding:5px 10px">Masculin</td>
             </tr>
           </table>
-          ✅ En-tête ignorée · Masculin/Féminin, G/F, M/H acceptés · Niveau à définir dans l'appli
+          ✅ En-tête ignorée · Masculin/Féminin, G/F, M/H acceptés · Niveau à définir dans l'appli<br>
+          🏫 <strong>4e colonne facultative : Classe</strong> (ex : 6A) — utile pour un groupe de plusieurs classes
         </div>
       </div>
     </div>
@@ -704,6 +731,205 @@ function elevesArr(classId) {
 }
 function curEleves() { return elevesArr(currentClassId); }
 
+// ── CLASSE D'ORIGINE (groupes composés de plusieurs classes) ─────────
+const CL_COLORS = ['#00897b','#8e24aa','#ef6c00','#3949ab','#c2185b','#6d4c41','#0277bd','#558b2f'];
+const clTrim = c => String(c ?? '').trim();
+// Classe d'un élève : on relit la fiche actuelle (utile pour les équipes déjà enregistrées)
+function clOf(e) {
+  const live = elevesOf(currentClassId)[e?.id];
+  return clTrim(live ? live.cl : e?.cl);
+}
+const clSort = (a, b) => a.localeCompare(b, 'fr', { numeric: true, sensitivity: 'base' });
+function classesPresentes() {
+  return [...new Set(curEleves().map(e => clTrim(e.cl)).filter(Boolean))].sort(clSort);
+}
+function clColor(c) {
+  const i = classesPresentes().indexOf(c);
+  return i < 0 ? '#9aa0a6' : CL_COLORS[i % CL_COLORS.length];
+}
+function clBadge(c, extraStyle = '') {
+  return c ? `<span class="cl-badge" style="background:${clColor(c)};${extraStyle}" title="Classe ${c}">${c}</span>` : '';
+}
+// Mélange de classes actif ?
+function useMixCl() {
+  return !!G('mixcl')?.checked && classesPresentes().length >= 2;
+}
+// Normalise un nom pour comparer "Alaz KIRCALI" et "KIRCALI Alaz"
+const normName = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(Boolean).sort().join(' ');
+const isGroupName = n => /groupe|composition/i.test(n || '');
+
+// Pour chaque élève sans classe, cherche une classe d'origine unique dans les autres classes du compte
+function findOrigins() {
+  const idx = {};
+  Object.entries(classes).forEach(([cid, cls]) => {
+    if (cid === currentClassId) return;
+    Object.values(cls.eleves || {}).forEach(e => {
+      const k = normName(e.nom); if (!k) return;
+      (idx[k] = idx[k] || new Set()).add(cls.nom);
+    });
+  });
+  const found = {}, notFound = [];
+  curEleves().filter(e => !clTrim(e.cl)).forEach(e => {
+    let cands = [...(idx[normName(e.nom)] || [])];
+    if (cands.length > 1) cands = cands.filter(n => !isGroupName(n));
+    if (cands.length === 1 && !isGroupName(cands[0])) found[e.id] = cands[0];
+    else notFound.push(e.nom);
+  });
+  return { found, notFound };
+}
+
+window.detectClasses = async () => {
+  const { found, notFound } = findOrigins();
+  const ids = Object.keys(found);
+  if (!ids.length) { alert("Aucun élève retrouvé dans vos autres classes."); return; }
+  const u = {};
+  ids.forEach(id => { u[`users/${uid}/classes/${currentClassId}/eleves/${id}/cl`] = found[id]; });
+  await update(ref(db), u);
+  const recap = {};
+  Object.values(found).forEach(c => recap[c] = (recap[c] || 0) + 1);
+  let msg = `✅ ${ids.length} élève(s) associé(s) à leur classe :\n` +
+    Object.keys(recap).sort(clSort).map(c => `   • ${c} : ${recap[c]}`).join('\n');
+  if (notFound.length) msg += `\n\n⚠️ ${notFound.length} élève(s) non retrouvé(s) (à compléter avec ✏️ ou en cliquant sur « ＋ classe ») :\n` +
+    notFound.slice(0, 20).map(n => `   • ${n}`).join('\n') + (notFound.length > 20 ? '\n   …' : '');
+  alert(msg);
+};
+
+// Clic sur le badge de classe d'une fiche : passe à la classe suivante
+window.cycleCl = async id => {
+  const e = elevesOf(currentClassId)[id]; if (!e) return;
+  let list = classesPresentes();
+  if (list.length < 2) {
+    const others = Object.entries(classes).filter(([cid, c]) => cid !== currentClassId && !isGroupName(c.nom)).map(([, c]) => c.nom);
+    list = [...new Set([...list, ...others])].sort(clSort);
+  }
+  if (!list.length) { openEdit(id); return; }
+  const cur = clTrim(e.cl);
+  const i = list.indexOf(cur);
+  const next = i < 0 ? list[0] : (i + 1 < list.length ? list[i + 1] : '');
+  await update(ref(db, `users/${uid}/classes/${currentClassId}/eleves/${id}`), { cl: next });
+};
+
+// Met à jour tous les éléments d'interface liés aux classes d'origine
+function refreshClUI() {
+  const pres = classesPresentes();
+  const others = Object.entries(classes).filter(([cid, c]) => cid !== currentClassId && !isGroupName(c.nom)).map(([, c]) => c.nom);
+  const dl = G('cl-list');
+  if (dl) dl.innerHTML = [...new Set([...pres, ...others])].sort(clSort).map(c => `<option value="${c}">`).join('');
+
+  const f = G('fcl');
+  if (f) {
+    const prev = f.value;
+    const hasNone = curEleves().some(e => !clTrim(e.cl));
+    f.innerHTML = `<option value="">Toutes classes</option>` +
+      pres.map(c => `<option value="${c}">🏫 ${c}</option>`).join('') +
+      (hasNone ? `<option value="__none">Sans classe</option>` : '');
+    f.value = [...f.options].some(o => o.value === prev) ? prev : '';
+    f.style.display = pres.length ? '' : 'none';
+  }
+
+  const btn = G('btn-detect-cl');
+  if (btn) {
+    const n = Object.keys(findOrigins().found).length;
+    btn.style.display = n ? '' : 'none';
+    btn.innerHTML = `🔍 Retrouver les classes (${n})`;
+  }
+
+  const w = G('mixcl-wrap');
+  if (w) w.style.display = pres.length >= 2 ? 'flex' : 'none';
+}
+
+// ── RÉPARTITION AVEC MÉLANGE DES CLASSES ─────────────────────────────
+// Équilibre dans chaque équipe : classes d'origine (priorité), sexe, puis niveau (si bal)
+function distribMixCl(joueurs, n, bal) {
+  const N = joueurs.length;
+  if (!N) return Array.from({ length: n }, () => []);
+  const key = p => clOf(p) || '?';
+  const clTot = {};
+  joueurs.forEach(p => { const k = key(p); clTot[k] = (clTot[k] || 0) + 1; });
+  const clList = Object.keys(clTot);
+  const NG = joueurs.filter(p => p.sx === 'G').length;
+  const avgNv = joueurs.reduce((s, p) => s + p.nv, 0) / N;
+  const base = Math.floor(N / n), extra = N % n;
+  const W_CL = 20, W_SX = 4, W_NV = bal ? 1.2 : 0;
+
+  const tScore = t => {
+    let s = 0;
+    for (const c of clList) { const d = (t.cnt[c] || 0) - t.size * clTot[c] / N; s += W_CL * d * d; }
+    const dg = t.g - t.size * NG / N; s += W_SX * dg * dg;
+    if (W_NV) { const dn = t.nv - t.size * avgNv; s += W_NV * dn * dn; }
+    return s;
+  };
+  const adj = (t, p, sg) => {
+    const k = key(p); t.cnt[k] = (t.cnt[k] || 0) + sg;
+    if (p.sx === 'G') t.g += sg;
+    t.nv += sg * p.nv;
+  };
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const r = Math.floor(Math.random() * (i + 1)); [a[i], a[r]] = [a[r], a[i]]; } return a; };
+
+  const build = () => {
+    // Tailles d'équipes réparties au hasard (les équipes « +1 » changent à chaque tirage)
+    const sizes = shuffle(Array.from({ length: n }, (_, i) => base + (i < extra ? 1 : 0)));
+    const T = sizes.map(size => ({ size, cnt: {}, g: 0, nv: 0, ps: [] }));
+    const order = shuffle([...joueurs]);
+    if (bal) order.sort((a, b) => b.nv - a.nv);
+    for (const p of order) {
+      let best = Infinity, cands = [];
+      T.forEach((t, i) => {
+        if (t.ps.length >= t.size) return;
+        const before = tScore(t); adj(t, p, 1); const d = tScore(t) - before; adj(t, p, -1);
+        if (d < best - 1e-9) { best = d; cands = [i]; } else if (Math.abs(d - best) <= 1e-9) cands.push(i);
+      });
+      const t = T[cands[Math.floor(Math.random() * cands.length)]];
+      adj(t, p, 1); t.ps.push(p);
+    }
+    // Amélioration par échanges entre équipes
+    let improved = true, guard = 0;
+    while (improved && guard++ < 40) {
+      improved = false;
+      for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) {
+        const A = T[a], B = T[b];
+        for (let i = 0; i < A.ps.length; i++) for (let j = 0; j < B.ps.length; j++) {
+          const p = A.ps[i], q = B.ps[j];
+          if (key(p) === key(q) && p.sx === q.sx && p.nv === q.nv) continue;
+          const before = tScore(A) + tScore(B);
+          adj(A, p, -1); adj(A, q, 1); adj(B, q, -1); adj(B, p, 1);
+          if (tScore(A) + tScore(B) < before - 1e-9) { A.ps[i] = q; B.ps[j] = p; improved = true; }
+          else { adj(A, q, -1); adj(A, p, 1); adj(B, p, -1); adj(B, q, 1); }
+        }
+      }
+    }
+    return { T, score: T.reduce((s, t) => s + tScore(t), 0) };
+  };
+
+  let best = null;
+  for (let k = 0; k < 20; k++) { const r = build(); if (!best || r.score < best.score) best = r; }
+
+  // Ordre dans l'équipe : alternance ♂/♀ (sexe majoritaire d'abord), meilleurs niveaux en premier si équilibré
+  return best.T.map(t => {
+    const byNv = arr => bal ? arr.sort((a, b) => b.nv - a.nv) : arr;
+    const Gp = byNv(t.ps.filter(p => p.sx === 'G').map(p => ({ ...p })));
+    const Fp = byNv(t.ps.filter(p => p.sx === 'F').map(p => ({ ...p })));
+    const first = Gp.length >= Fp.length ? Gp : Fp, second = first === Gp ? Fp : Gp;
+    const merged = [];
+    for (let k = 0; k < Math.max(first.length, second.length); k++) {
+      if (k < first.length) merged.push(first[k]);
+      if (k < second.length) merged.push(second[k]);
+    }
+    merged.forEach((p, i) => p.num = i + 1);
+    return merged;
+  });
+}
+
+// Résumé « 6A 2 · 6B 2 » d'une équipe
+function clSummaryHtml(team) {
+  const c = {};
+  team.joueurs.forEach(p => { const k = clOf(p) || '?'; c[k] = (c[k] || 0) + 1; });
+  return Object.keys(c).sort(clSort).map(k => k === '?'
+    ? `<span class="cl-badge cl-none" style="cursor:default">sans classe ${c[k]}</span>`
+    : `<span class="cl-badge" style="background:${clColor(k)};cursor:default">${k} × ${c[k]}</span>`).join('');
+}
+
 // ── AUTH ─────────────────────────────────────────────
 window.loginGoogle = async () => {
   try { await signInWithPopup(auth, provider); }
@@ -810,6 +1036,7 @@ window.selectClass = async id => {
       if (saved.neq)     G('neq').value = saved.neq;
       if (saved.njoueurs) G('njoueurs').value = saved.njoueurs;
       if (saved.mix) document.querySelector(`input[name=mix][value="${saved.mix}"]`).checked = true;
+      if (saved.mixCl != null && G('mixcl')) G('mixcl').checked = !!saved.mixCl;
       if (saved.bal) {
         const balInput = document.querySelector(`input[name=eq][value="${saved.bal}"]`);
         if (balInput) balInput.checked = true;
@@ -905,8 +1132,9 @@ window.addEleve = async () => {
   const sx = document.querySelector('input[name=sx]:checked').value;
   const nv = parseInt(document.querySelector('input[name=nv]:checked').value);
   const r  = push(ref(db, `users/${uid}/classes/${currentClassId}/eleves`));
-  await set(r, { nom, sx, nv, abs: false });
-  G('inp').value = '';
+  const cl = clTrim(G('inp-cl').value);
+  await set(r, cl ? { nom, sx, nv, abs: false, cl } : { nom, sx, nv, abs: false });
+  G('inp').value = '';  // la classe reste remplie pour enchaîner les saisies
   G('inp').focus();
 };
 
@@ -914,7 +1142,11 @@ window.renderEleves = () => {
   if (!currentClassId) return;
   const q  = (G('q').value || '').toLowerCase();
   const fs = G('fsx').value;
-  let L = curEleves().filter(e => e.nom.toLowerCase().includes(q) && (!fs || e.sx === fs));
+  refreshClUI();
+  const fc = G('fcl')?.value || '';
+  const showCl = classesPresentes().length > 0;
+  let L = curEleves().filter(e => (e.nom.toLowerCase().includes(q) || clTrim(e.cl).toLowerCase() === q) && (!fs || e.sx === fs)
+    && (!fc || (fc === '__none' ? !clTrim(e.cl) : clTrim(e.cl) === fc)));
   L.sort((a,b) => a.abs !== b.abs ? (a.abs ? 1 : -1) : a.nom.localeCompare(b.nom));
 
   // Couleur selon niveau : nv5=vert(fort), nv3=jaune, nv1=rouge(faible)
@@ -933,6 +1165,8 @@ window.renderEleves = () => {
           <div class="sname" title="${e.nom}">${e.nom}</div>
           <div class="smeta">
             <span>${e.sx === 'G' ? 'Garçon' : 'Fille'}</span>
+            ${clTrim(e.cl) ? `<span onclick="cycleCl('${e.id}')" title="Cliquer pour changer de classe">${clBadge(clTrim(e.cl))}</span>`
+              : (showCl ? `<span class="cl-badge cl-none" onclick="cycleCl('${e.id}')" title="Cliquer pour choisir la classe">＋ classe</span>` : '')}
             ${e.abs ? '<span style="color:var(--red);font-weight:700;font-size:11px">ABSENT</span>' : ''}
           </div>
           <div class="inline-stars" title="Cliquer pour changer le niveau">
@@ -970,6 +1204,8 @@ function updateStats() {
     <div class="chip" style="color:var(--boy)">♂ <strong>${pr.filter(e=>e.sx==='G').length}</strong></div>
     <div class="chip" style="color:var(--girl)">♀ <strong>${pr.filter(e=>e.sx==='F').length}</strong></div>
     <div class="chip" style="color:var(--red)">😴 <strong>${all.filter(e=>e.abs).length}</strong></div>
+    ${classesPresentes().map(c => `<div class="chip" style="border:1.5px solid ${clColor(c)};color:${clColor(c)}" title="Élèves présents de ${c}">🏫 ${c} <strong>${pr.filter(e => clTrim(e.cl) === c).length}</strong></div>`).join('')}
+    ${classesPresentes().length && pr.some(e => !clTrim(e.cl)) ? `<div class="chip" style="border:1.5px dashed #9aa0a6;color:#5f6368">Sans classe <strong>${pr.filter(e => !clTrim(e.cl)).length}</strong></div>` : ''}
     ${isCompoClass() ? OPTS.map(o => `<div class="chip" style="border:1.5px solid ${OPT_COLOR[o]};color:${OPT_COLOR[o]}">${OPT_LABEL[o]} <strong>${pr.filter(e=>optsOf(e).includes(o)).length}</strong></div>`).join('') : ''}`;
   G('b-el').textContent = all.length;
 
@@ -1020,6 +1256,7 @@ window.openEdit = id => {
   const e = elevesOf(currentClassId)[id]; if (!e) return;
   editEleveId = id;
   G('en2').value = e.nom;
+  G('en-cl').value = clTrim(e.cl);
   document.querySelector(`input[name=esx][value="${e.sx}"]`).checked = true;
   document.querySelector(`input[name=env][value="${e.nv}"]`).checked = true;
   G('modal').classList.add('open');
@@ -1030,7 +1267,8 @@ window.saveEdit = async () => {
   const nom = G('en2').value.trim(); if (!nom) return;
   const sx  = document.querySelector('input[name=esx]:checked').value;
   const nv  = parseInt(document.querySelector('input[name=env]:checked').value);
-  await update(ref(db, `users/${uid}/classes/${currentClassId}/eleves/${editEleveId}`), { nom, sx, nv });
+  const cl  = clTrim(G('en-cl').value);
+  await update(ref(db, `users/${uid}/classes/${currentClassId}/eleves/${editEleveId}`), { nom, sx, nv, cl });
   closeM();
 };
 
@@ -1312,9 +1550,31 @@ function updateSepComposeArea(nG, nF) {
     ♂ <strong>${selG} équipes garçons</strong> (${bDesc}) &nbsp;·&nbsp;
     ♀ <strong>${selF} équipes filles</strong> (${fDesc}) &nbsp;·&nbsp;
     <strong>${selG+selF} équipes au total</strong>
+    ${useMixCl() ? '<br>🏫 <strong>Classes mélangées</strong> dans chaque équipe ♂ et ♀' : ''}
   </div>`;
 }
 
+
+window.onMixClChange = () => {
+  if (document.querySelector('input[name=mix]:checked')?.value === 'sep') {
+    const pr = curEleves().filter(e => !e.abs);
+    updateSepComposeArea(pr.filter(e => e.sx === 'G').length, pr.filter(e => e.sx === 'F').length);
+  } else preview();
+};
+// Message d'aperçu pour le mélange des classes
+function mixClMsg(pr, nTeams, simil) {
+  if (!useMixCl()) return '';
+  if (simil) return `<br>🏫 <em>Le mélange des classes n'est pas appliqué en mode Similaires.</em>`;
+  const pres = classesPresentes();
+  const parts = pres.map(c => {
+    const nb = pr.filter(e => clTrim(e.cl) === c).length;
+    const per = nTeams ? nb / nTeams : 0;
+    return `${clBadge(c, 'cursor:default')} ${nb} élèves → ${Number.isInteger(per) ? per : '≈ ' + per.toFixed(1)} / équipe`;
+  }).join(' &nbsp;·&nbsp; ');
+  const none = pr.filter(e => !clTrim(e.cl)).length;
+  return `<br>🏫 <strong>Classes mélangées</strong> : ${parts}` +
+    (none ? `<br><span style="color:var(--red)">⚠️ ${none} élève(s) présent(s) sans classe — complétez-les dans l'onglet Élèves.</span>` : '');
+}
 
 window.preview = () => {
   const pr    = curEleves().filter(e => !e.abs);
@@ -1353,7 +1613,7 @@ window.preview = () => {
 
   G('prev').innerHTML = `<div class="al al-i">
     👁️ <strong>${neq} équipes</strong> · ${total} présents · ${repartDesc} ✓
-    ${modeMsg}
+    ${modeMsg}${mixClMsg(pr, neq, simil)}
   </div>`;
 };
 
@@ -1445,7 +1705,10 @@ window.compose = async () => {
     const nTeamsF = selectedSepCombo.nTeamsF;
 
     let tG, tF;
-    if (simil) {
+    if (!simil && useMixCl()) {
+      tG = distribMixCl(Gp, nTeamsG, bal).map(j => ({ joueurs: j }));
+      tF = distribMixCl(Fp, nTeamsF, bal).map(j => ({ joueurs: j }));
+    } else if (simil) {
       tG = distribSimilaire(Gp, nTeamsG);
       tF = distribSimilaire(Fp, nTeamsF);
     } else {
@@ -1478,6 +1741,11 @@ window.compose = async () => {
       eq.nvMax = nvs.length ? Math.max(...nvs) : '-';
       eq.nvAvg = nvs.length ? (nvs.reduce((a,b) => a+b, 0) / nvs.length).toFixed(1) : '-';
     });
+
+  } else if (useMixCl()) {
+    // ── MODE MIXTE + MÉLANGE DES CLASSES ──
+    if (pr.length < n) { alert(`Pas assez d'élèves présents (${pr.length}) pour ${n} équipes.`); return; }
+    EQ = distribMixCl(pr, n, bal).map((joueurs, i) => ({ id: i, joueurs }));
 
   } else {
     // ── MODE MIXTE : distribution alternée G/F ──
@@ -1514,7 +1782,7 @@ window.compose = async () => {
   const eqToSave = EQ.map((t, i) => ({
     id: t.id, genre: t.genre || null, color: teamColors[i] || null,
     joueurs: t.joueurs.map(p => ({
-      id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num
+      id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num, cl: clOf(p)
     }))
   }));
   const sportData = {
@@ -1526,6 +1794,7 @@ window.compose = async () => {
     mix: document.querySelector('input[name=mix]:checked').value,
     bal: eqVal,
     simil: simil,
+    mixCl: !!G('mixcl')?.checked,
     savedAt: Date.now()
   };
   await set(ref(db, `users/${uid}/classes/${currentClassId}/equipes_sport/${currentSport}`), sportData);
@@ -1673,7 +1942,7 @@ window.repartirClasses = async () => {
   const label = `Répartition (${n} classes)${grpLabel}`;
   const eqToSave = EQ.map((t, i) => ({
     id: t.id, genre: null, color: teamColors[i] || null,
-    joueurs: t.joueurs.map(p => ({ id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num, opts: optsOf(p) }))
+    joueurs: t.joueurs.map(p => ({ id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num, cl: clOf(p), opts: optsOf(p) }))
   }));
   const sportData = { sport: key, label, data: eqToSave, neq: n, mix: 'mixte', bal: 'repart', simil: false, savedAt: Date.now() };
   await set(ref(db, `users/${uid}/classes/${currentClassId}/equipes_sport/${key}`), sportData);
@@ -1697,6 +1966,7 @@ function renderEQ() {
   const sportLabel = currentSport ? (savedSports[currentSport]?.label || currentSport) : '';
 
   renderSportTabs();
+  const showClStrip = classesPresentes().length >= 2;
 
   let html = `
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
@@ -1722,7 +1992,7 @@ function renderEQ() {
       ondragleave="dragLeavePlayer(event)"
       ondrop="dropOnPlayer(event)">
       <div class="pnum">${j.num}</div>
-      <div class="pname">${j.nom}${optsOf(j).length?' '+optsOf(j).map(o=>`<span style="font-size:9px;font-weight:800;color:#fff;background:${optColor(o)};padding:1px 6px;border-radius:9px;vertical-align:middle">${o}</span>`).join(' '):''}</div>
+      <div class="pname">${j.nom}${clOf(j) ? ' ' + clBadge(clOf(j), 'cursor:default;font-size:10px;padding:0 6px') : ''}${optsOf(j).length?' '+optsOf(j).map(o=>`<span style="font-size:9px;font-weight:800;color:#fff;background:${optColor(o)};padding:1px 6px;border-radius:9px;vertical-align:middle">${o}</span>`).join(' '):''}</div>
       ${isCompoClass()?`<span style="font-size:13px;letter-spacing:1px;white-space:nowrap" title="Niveau ${j.nv}">${[1,2,3,4,5].map(k=>`<span style="color:${k<=j.nv?['','#ea4335','#ff7043','#fbbc04','#8bc34a','#43a047'][j.nv]:'#dadce0'}">★</span>`).join('')}</span>`:''}
       <span style="font-size:18px;font-weight:900;color:${j.sx==='G'?'var(--boy)':'var(--girl)'}">${j.sx==='G'?'♂\uFE0E':'♀\uFE0E'}</span>
     </div>`;
@@ -1755,6 +2025,7 @@ function renderEQ() {
           </label>
         </div>
       </div>
+      ${showClStrip ? `<div class="cl-strip">${clSummaryHtml(team)}</div>` : ''}
       ${isCompoClass() ? `<div style="padding:8px 12px;border-bottom:1px solid var(--border);background:#fafbfc">${optSummaryHtml(team)}</div>
       <div class="eq-sortbar">${sortControlsHtml(teamIdx, false)}</div>` : ''}
       <div class="tbody"
@@ -1888,7 +2159,7 @@ function processLines(rows) {
     // Filtre les lignes vides
     if (!cols || cols.every(c => !c.trim())) return;
 
-    let nom, sx;
+    let nom, sx, cl = '';
 
     if (cols.length >= 3) {
       // Format : NOM | Prénom | Sexe  (export pronote/ecole directe)
@@ -1896,6 +2167,7 @@ function processLines(rows) {
       const prenom     = (cols[1] || '').trim();
       nom = prenom && nomFamille ? `${prenom} ${nomFamille}` : (nomFamille || prenom);
       sx  = normSexe(cols[2] || '');
+      cl  = (cols[3] || '').trim();   // 4e colonne facultative : classe
     } else if (cols.length === 2) {
       // Format : Prénom Nom | Sexe
       nom = (cols[0] || '').trim();
@@ -1908,7 +2180,7 @@ function processLines(rows) {
     if (!sx)  { errors.push(`Ligne ${lineNum} : sexe invalide ("${cols[cols.length-1]}")`); return; }
 
     // Niveau par défaut 3 — sera défini manuellement dans l'appli
-    valid.push({ nom, sx, nv: 3 });
+    valid.push({ nom, sx, nv: 3, cl: String(cl).trim() });
   });
 
   importRows = valid;
@@ -1923,11 +2195,13 @@ function processLines(rows) {
     <th style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--muted);text-align:left">#</th>
     <th style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--muted);text-align:left">NOM COMPLET</th>
     <th style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--muted);text-align:left">SEXE</th>
+    <th style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--muted);text-align:left">CLASSE</th>
   </tr>`;
   const tbody = valid.map((e, i) => `<tr style="border-bottom:1px solid var(--border)">
     <td style="padding:7px 12px;font-size:12px;color:var(--muted)">${i+1}</td>
     <td style="padding:7px 12px;font-size:13px;font-weight:600">${e.nom}</td>
     <td style="padding:7px 12px;font-size:13px">${e.sx === 'G' ? '<span style="color:var(--boy)">♂ Garçon</span>' : '<span style="color:var(--girl)">♀ Fille</span>'}</td>
+    <td style="padding:7px 12px;font-size:13px">${e.cl || '<span style="color:var(--muted)">—</span>'}</td>
   </tr>`).join('');
   G('import-table').innerHTML = thead + tbody;
 
@@ -1944,7 +2218,7 @@ window.confirmImport = async () => {
   importRows.forEach(e => {
     const key = push(ref(db, `users/${uid}/classes/${currentClassId}/eleves`)).key;
     updates[`users/${uid}/classes/${currentClassId}/eleves/${key}`] = {
-      nom: e.nom, sx: e.sx, nv: e.nv, abs: false
+      nom: e.nom, sx: e.sx, nv: e.nv, abs: false, ...(e.cl ? { cl: e.cl } : {})
     };
   });
   await update(ref(db), updates);
@@ -1963,7 +2237,7 @@ window.changeTeamColor = (teamIdx, color) => {
   if (currentSport && uid && currentClassId) {
     const eqToSave = EQ.map((t, i) => ({
       id: t.id, genre: t.genre || null, color: teamColors[i] || null,
-      joueurs: t.joueurs.map(p => ({ id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num }))
+      joueurs: t.joueurs.map(p => ({ id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num, cl: clOf(p) }))
     }));
     const sportData = { ...(savedSports[currentSport] || {}), data: eqToSave, savedAt: Date.now() };
     savedSports[currentSport] = sportData;
@@ -2102,7 +2376,7 @@ function persistEQ() {
   if (!(currentSport && uid && currentClassId)) return;
   const eqToSave = EQ.map((t, i) => ({
     id: t.id, genre: t.genre || null, color: teamColors[i] || null,
-    joueurs: t.joueurs.map(p => ({ id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num, opts: optsOf(p) }))
+    joueurs: t.joueurs.map(p => ({ id: p.id, nom: p.nom, sx: p.sx, nv: p.nv, num: p.num, cl: clOf(p), opts: optsOf(p) }))
   }));
   const sportData = { ...(savedSports[currentSport] || {}), data: eqToSave, savedAt: Date.now() };
   savedSports[currentSport] = sportData;
@@ -2125,7 +2399,8 @@ function applySortTeam(idx) {
     nom:    p => splitName(p.nom).nom.toLowerCase(),
     sexe:   p => p.sx,
     niveau: p => p.nv,
-    option: p => (optsOf(p).slice().sort().join(',') || '\uffff')
+    option: p => (optsOf(p).slice().sort().join(',') || '\uffff'),
+    classe: p => (clOf(p) || '\uffff')
   }[s.key];
   if (!keyer) return;
   t.joueurs.sort((a, b) => {
@@ -2151,7 +2426,7 @@ window.toggleSortDir = idx => {
 };
 function sortControlsHtml(idx, dark) {
   const s = eqSort[idx] || { key: 'manuel', dir: 'asc' };
-  const opts = [['manuel', 'Ordre manuel'], ['prenom', 'Prénom'], ['nom', 'Nom'], ['option', 'Option'], ['sexe', 'Sexe'], ['niveau', 'Niveau']];
+  const opts = [['manuel', 'Ordre manuel'], ['prenom', 'Prénom'], ['nom', 'Nom'], ['option', 'Option'], ['sexe', 'Sexe'], ['niveau', 'Niveau'], ['classe', 'Classe']];
   return `<span style="font-size:12px;${dark ? 'color:#5a6573' : 'color:var(--muted)'};font-weight:700">Trier :</span>
     <select onchange="setSortKey(${idx}, this.value)">
       ${opts.map(([v, l]) => `<option value="${v}" ${s.key === v ? 'selected' : ''}>${l}</option>`).join('')}
@@ -2200,7 +2475,7 @@ function renderProjection() {
       ondragover="dragOverPlayer(event)" ondragleave="dragLeavePlayer(event)" ondrop="dropOnPlayer(event)"
       style="background:${j.sx === 'G' ? '#e8f0fe' : '#fce4ec'}">
       <span class="proj-num">${j.num}</span>
-      <span style="flex:1;font-weight:600">${j.nom}${optsOf(j).length ? ' ' + optsOf(j).map(o => `<span style="font-size:.6em;font-weight:800;color:#fff;background:${optColor(o)};padding:.1em .5em;border-radius:1em;vertical-align:middle">${o}</span>`).join(' ') : ''}</span>
+      <span style="flex:1;font-weight:600">${j.nom}${clOf(j) ? ' ' + clBadge(clOf(j), 'cursor:default;font-size:.6em') : ''}${optsOf(j).length ? ' ' + optsOf(j).map(o => `<span style="font-size:.6em;font-weight:800;color:#fff;background:${optColor(o)};padding:.1em .5em;border-radius:1em;vertical-align:middle">${o}</span>`).join(' ') : ''}</span>
       <span style="letter-spacing:1px;white-space:nowrap;font-size:.82em">${[1, 2, 3, 4, 5].map(k => `<span style="color:${k <= j.nv ? nvCol[j.nv] : '#dadce0'}">★</span>`).join('')}</span>
       <span style="font-size:1.05em;font-weight:900;color:${j.sx === 'G' ? 'var(--boy)' : 'var(--girl)'}">${j.sx === 'G' ? '♂\uFE0E' : '♀\uFE0E'}</span>
     </div>`;
@@ -2285,7 +2560,7 @@ window.exportExcel = () => {
         const j = team.joueurs[r];
         if (j) {
           const stars = '★'.repeat(j.nv) + '☆'.repeat(5 - j.nv);
-          row.push(`${j.num}. ${j.nom}`);
+          row.push(`${j.num}. ${j.nom}${clOf(j) ? ' (' + clOf(j) + ')' : ''}`);
           row.push(stars);
         } else {
           row.push(''); row.push('');
@@ -2315,11 +2590,12 @@ window.exportExcel = () => {
     XLSX.utils.book_append_sheet(wb, ws, 'Equipes');
 
     // Feuille récap par élève
-    const recapData = [['Nom', 'Sexe', 'Niveau', 'Equipe']];
+    const recapData = [['Nom', 'Classe', 'Sexe', 'Niveau', 'Equipe']];
     EQ.forEach((team, i) => {
       team.joueurs.forEach(j => {
         recapData.push([
           j.nom,
+          clOf(j),
           j.sx === 'G' ? 'Garçon' : 'Fille',
           j.nv,
           `Equipe ${i + 1}`
@@ -2327,7 +2603,7 @@ window.exportExcel = () => {
       });
     });
     const wsRecap = XLSX.utils.aoa_to_sheet(recapData);
-    wsRecap['!cols'] = [{ wch: 30 }, { wch: 10 }, { wch: 8 }, { wch: 12 }];
+    wsRecap['!cols'] = [{ wch: 30 }, { wch: 10 }, { wch: 10 }, { wch: 8 }, { wch: 12 }];
     XLSX.utils.book_append_sheet(wb, wsRecap, 'Liste élèves');
 
     // Téléchargement
