@@ -848,20 +848,28 @@ function distribMixCl(joueurs, n, bal) {
   const clTot = {};
   joueurs.forEach(p => { const k = key(p); clTot[k] = (clTot[k] || 0) + 1; });
   const clList = Object.keys(clTot);
+  // Catégories croisées classe × sexe : « Fille 6A », « Garçon 6A », « Fille 6B », « Garçon 6B »
+  const key2 = p => key(p) + '|' + p.sx;
+  const cxTot = {};
+  joueurs.forEach(p => { const k = key2(p); cxTot[k] = (cxTot[k] || 0) + 1; });
+  const cxList = Object.keys(cxTot);
   const NG = joueurs.filter(p => p.sx === 'G').length;
   const avgNv = joueurs.reduce((s, p) => s + p.nv, 0) / N;
   const base = Math.floor(N / n), extra = N % n;
-  const W_CL = 20, W_SX = 4, W_NV = bal ? 1.2 : 0;
+  // Priorités : 1) classes à parts égales  2) une fille et un garçon de chaque classe  3) sexe  4) niveau
+  const W_CL = 20, W_CX = 10, W_SX = 4, W_NV = bal ? 1.2 : 0;
 
   const tScore = t => {
     let s = 0;
     for (const c of clList) { const d = (t.cnt[c] || 0) - t.size * clTot[c] / N; s += W_CL * d * d; }
+    for (const c of cxList) { const d = (t.cx[c] || 0) - t.size * cxTot[c] / N; s += W_CX * d * d; }
     const dg = t.g - t.size * NG / N; s += W_SX * dg * dg;
     if (W_NV) { const dn = t.nv - t.size * avgNv; s += W_NV * dn * dn; }
     return s;
   };
   const adj = (t, p, sg) => {
     const k = key(p); t.cnt[k] = (t.cnt[k] || 0) + sg;
+    const k2 = key2(p); t.cx[k2] = (t.cx[k2] || 0) + sg;
     if (p.sx === 'G') t.g += sg;
     t.nv += sg * p.nv;
   };
@@ -870,7 +878,7 @@ function distribMixCl(joueurs, n, bal) {
   const build = () => {
     // Tailles d'équipes réparties au hasard (les équipes « +1 » changent à chaque tirage)
     const sizes = shuffle(Array.from({ length: n }, (_, i) => base + (i < extra ? 1 : 0)));
-    const T = sizes.map(size => ({ size, cnt: {}, g: 0, nv: 0, ps: [] }));
+    const T = sizes.map(size => ({ size, cnt: {}, cx: {}, g: 0, nv: 0, ps: [] }));
     const order = shuffle([...joueurs]);
     if (bal) order.sort((a, b) => b.nv - a.nv);
     for (const p of order) {
@@ -905,17 +913,17 @@ function distribMixCl(joueurs, n, bal) {
   let best = null;
   for (let k = 0; k < 20; k++) { const r = build(); if (!best || r.score < best.score) best = r; }
 
-  // Ordre dans l'équipe : alternance ♂/♀ (sexe majoritaire d'abord), meilleurs niveaux en premier si équilibré
+  // Ordre dans l'équipe : Fille 6A, Garçon 6A, Fille 6B, Garçon 6B… puis les élèves en surplus
+  const clOrder = [...clList].sort((a, b) => a === '?' ? 1 : b === '?' ? -1 : clSort(a, b));
   return best.T.map(t => {
-    const byNv = arr => bal ? arr.sort((a, b) => b.nv - a.nv) : arr;
-    const Gp = byNv(t.ps.filter(p => p.sx === 'G').map(p => ({ ...p })));
-    const Fp = byNv(t.ps.filter(p => p.sx === 'F').map(p => ({ ...p })));
-    const first = Gp.length >= Fp.length ? Gp : Fp, second = first === Gp ? Fp : Gp;
+    const groups = [];
+    clOrder.forEach(c => ['F', 'G'].forEach(sx => {
+      const g = t.ps.filter(p => key(p) === c && p.sx === sx).map(p => ({ ...p }));
+      if (bal) g.sort((a, b) => b.nv - a.nv);
+      if (g.length) groups.push(g);
+    }));
     const merged = [];
-    for (let k = 0; k < Math.max(first.length, second.length); k++) {
-      if (k < first.length) merged.push(first[k]);
-      if (k < second.length) merged.push(second[k]);
-    }
+    for (let r = 0; groups.some(g => r < g.length); r++) groups.forEach(g => { if (r < g.length) merged.push(g[r]); });
     merged.forEach((p, i) => p.num = i + 1);
     return merged;
   });
