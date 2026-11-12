@@ -252,7 +252,7 @@ input[type=text]{min-width:160px}
     <button class="tb active" onclick="showTab('eleves')" id="tab-eleves">👥 Élèves <span class="badge" id="b-el">0</span></button>
     <button class="tb" onclick="showTab('params')" id="tab-params">⚙️ Paramètres</button>
     <button class="tb" onclick="showTab('equipes')" id="tab-equipes">🏆 Équipes <span class="badge" id="b-eq">0</span></button>
-    <button class="tb" onclick="showTab('eval')" id="tab-eval">🔒 Évaluation</button>
+    <button class="tb" onclick="showTab('eval')" id="tab-eval">📝 Évaluation</button>
   </div>
 
   <div class="content">
@@ -1139,10 +1139,6 @@ window.deleteClass = async id => {
 
 // ── TABS ─────────────────────────────────────────────
 window.showTab = t => {
-  if (t === 'eval') {
-    openEvalLock();
-    return;
-  }
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tb').forEach(b => b.classList.remove('active'));
   G('panel-' + t).classList.add('active');
