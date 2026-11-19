@@ -211,6 +211,10 @@ input[type=text]{min-width:160px}
 .cl-strip{padding:6px 12px;border-bottom:1px solid var(--border);background:#fafbfc;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .mixcl-box{margin-top:16px;padding:12px 14px;border:2px solid #00897b;border-radius:10px;background:#e0f2f1;display:flex;align-items:center;gap:10px;cursor:pointer}
 .mixcl-box input{width:20px;height:20px;accent-color:#00897b;cursor:pointer}
+/* Saisie des notes */
+input.note-inp{width:64px;min-width:0!important;text-align:center;border:1.5px solid var(--border);border-radius:6px;padding:6px 4px;font-size:13px;font-weight:600;outline:none;transition:background .12s,border-color .12s}
+input.note-inp:focus{border-color:var(--primary);background:#e8f0fe;box-shadow:0 0 0 3px rgba(26,115,232,.18)}
+tr:focus-within > td{background:#f3f8ff!important}
 </style>
 </head>
 <body>
@@ -2798,17 +2802,29 @@ window.moveCritere = async (id, dir) => {
 
 // ── Notes ──────────────────────────────────────────
 window.setNote = async (eleveId, critereId, val, max) => {
-  const numVal = Math.min(max, Math.max(0, parseFloat(val) || 0));
-  // Met à jour input si valeur a été corrigée
-  const inp = document.getElementById(`n_${eleveId}_${critereId}`);
-  if (inp && parseFloat(inp.value) !== numVal) inp.value = numVal;
-
   const grid = evalGrids[currentGrid];
   if (!grid.notes) grid.notes = {};
   if (!grid.notes[eleveId]) grid.notes[eleveId] = {};
-  grid.notes[eleveId][critereId] = numVal;
+  const path = `${ESPACE}/classes/${currentClassId}/eval/${currentGrid}/notes/${eleveId}/${critereId}`;
 
-  await set(ref(db, `${ESPACE}/classes/${currentClassId}/eval/${currentGrid}/notes/${eleveId}/${critereId}`), numVal);
+  // Case vidée : on efface la note (au lieu de mettre 0)
+  const str = String(val ?? '').trim().replace(',', '.');
+  if (str === '' || str === '.') {
+    delete grid.notes[eleveId][critereId];
+    updateEleveTotal(eleveId);
+    await remove(ref(db, path));
+    return;
+  }
+
+  const parsed = parseFloat(str) || 0;
+  const numVal = Math.min(max, Math.max(0, parsed));
+  // Met à jour l'input seulement si la valeur a été corrigée (ex : 7 sur un critère /5)
+  const inp = document.getElementById(`n_${eleveId}_${critereId}`);
+  if (inp && parsed !== numVal) inp.value = numVal;
+
+  grid.notes[eleveId][critereId] = numVal;
+  updateEleveTotal(eleveId);
+  await set(ref(db, path), numVal);
   // Met à jour la ligne totale dans le DOM sans re-render
   updateEleveTotal(eleveId);
 };
@@ -2908,15 +2924,12 @@ function renderEvalContent() {
             ${e.nom}
           </div>
         </td>`;
-      grid.criteres.forEach(c => {
+      grid.criteres.forEach((c, ci) => {
         const val = grid.notes?.[e.id]?.[c.id] ?? '';
         html += `<td style="padding:6px 8px;text-align:center">
-          <input type="number" id="n_${e.id}_${c.id}"
-            value="${val}" min="0" max="${c.max}" step="0.5"
-            style="width:64px;text-align:center;border:1.5px solid var(--border);border-radius:6px;padding:6px 4px;font-size:13px;font-weight:600"
-            onchange="setNote('${e.id}','${c.id}',this.value,${c.max})"
-            oninput="setNote('${e.id}','${c.id}',this.value,${c.max})"
-            placeholder="—">
+          <input type="text" inputmode="decimal" autocomplete="off" class="note-inp" id="n_${e.id}_${c.id}"
+            data-r="${ri}" data-c="${ci}" data-e="${e.id}" data-k="${c.id}" data-max="${c.max}"
+            value="${val}" placeholder="—">
         </td>`;
       });
       html += `<td style="padding:10px 16px;text-align:center" id="tot_${e.id}">
@@ -2964,6 +2977,89 @@ window.exportEvalExcel = () => {
     document.head.appendChild(s);
   }
 };
+
+// ── Saisie rapide au clavier ───────────────────────
+// • Une note "complète" fait passer automatiquement à la case de droite
+//   (fin de ligne → 1re case de l'élève suivant)
+// • Flèches ← → ↑ ↓ : déplacement dans le tableau · Entrée : case suivante
+// • Demi-point : taper 3 puis , (ou .) puis 5 → 3,5
+let lastAutoMove = null; // { from, to, t }
+
+function noteCell(r, c) {
+  return document.querySelector(`#eval-content .note-inp[data-r="${r}"][data-c="${c}"]`);
+}
+function focusCell(inp) {
+  if (!inp) return false;
+  inp.focus();
+  inp.select();
+  inp.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  return true;
+}
+function moveFrom(inp, dir) {
+  const r = +inp.dataset.r, c = +inp.dataset.c;
+  const nc = evalGrids[currentGrid]?.criteres?.length || 0;
+  if (dir === 'up')    return focusCell(noteCell(r - 1, c));
+  if (dir === 'down')  return focusCell(noteCell(r + 1, c));
+  if (dir === 'right') return focusCell(c + 1 < nc ? noteCell(r, c + 1) : noteCell(r + 1, 0));
+  if (dir === 'left')  return focusCell(c > 0 ? noteCell(r, c - 1) : noteCell(r - 1, nc - 1));
+  return false;
+}
+// La note ne peut plus être complétée par un chiffre → on passe à la suite
+function noteComplete(str, max) {
+  const s = str.replace(',', '.');
+  if (/^\d+\.\d$/.test(s)) return true;          // 3.5
+  if (!/^\d+$/.test(s)) return false;             // vide ou "3."
+  const v = parseInt(s, 10);
+  return v === 0 || v * 10 > max || v >= max;     // ex : /5 → 1 chiffre ; /20 → "2" attend, "8" ou "15" passe
+}
+
+document.addEventListener('input', e => {
+  const inp = e.target;
+  if (!inp.classList?.contains('note-inp')) return;
+  // Ne garde que chiffres + un séparateur décimal
+  let v = inp.value.replace(/[^\d.,]/g, '');
+  const m = v.match(/^(\d*)([.,]\d*)?/);
+  v = m ? (m[1] + (m[2] ? m[2].slice(0, 2) : '')) : '';
+  if (v !== inp.value) inp.value = v;
+
+  const max = parseFloat(inp.dataset.max);
+  setNote(inp.dataset.e, inp.dataset.k, inp.value, max);
+
+  if (noteComplete(inp.value, max)) {
+    const from = inp;
+    if (moveFrom(inp, 'right')) lastAutoMove = { from, to: document.activeElement, t: Date.now() };
+  }
+});
+
+document.addEventListener('keydown', e => {
+  const inp = e.target;
+  if (!inp.classList?.contains('note-inp')) return;
+  const map = { ArrowRight: 'right', ArrowLeft: 'left', ArrowUp: 'up', ArrowDown: 'down', Enter: 'right' };
+  if (map[e.key]) {
+    e.preventDefault();
+    lastAutoMove = null;
+    moveFrom(inp, map[e.key]);
+    return;
+  }
+  // Demi-point : "," ou "." juste après un passage automatique → on revient compléter la case précédente
+  if ((e.key === ',' || e.key === '.') && lastAutoMove && lastAutoMove.to === inp
+      && Date.now() - lastAutoMove.t < 4000) {
+    const from = lastAutoMove.from;
+    lastAutoMove = null;
+    if (document.body.contains(from) && /^\d+$/.test(from.value) && parseFloat(from.value) < parseFloat(from.dataset.max)) {
+      e.preventDefault();
+      from.focus();
+      from.value = from.value + ',';
+      from.setSelectionRange(from.value.length, from.value.length);
+    }
+  }
+});
+document.addEventListener('focusin', e => {
+  if (e.target.classList?.contains('note-inp')) {
+    const inp = e.target;
+    setTimeout(() => { if (document.activeElement === inp && !inp.value.endsWith(',')) inp.select(); }, 0);
+  }
+});
 
 // ── Chargement des grilles au changement de classe ─
 async function loadEvalGrids(classId) {
