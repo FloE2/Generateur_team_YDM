@@ -1122,7 +1122,29 @@ window.selectClass = async id => {
   } catch(e) { renderApsaChips(); }
 
   await loadEvalGrids(id);
+  await nettoyerClassesInvalides(id);
 };
+
+// Une "classe d'origine" valide contient au moins une lettre (6A, 5ème B…) :
+// les nombres seuls (ex : 41780 = date de naissance Excel) ou les dates sont rejetés
+function clValide(c) {
+  const s = clTrim(c);
+  return !!s && /[a-zA-Zéèêàù]/.test(s) && !/^\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}$/.test(s);
+}
+
+// Propose d'effacer les "classes" invalides (ex : dates de naissance importées par erreur)
+const nettoyageProposé = new Set();
+async function nettoyerClassesInvalides(classId) {
+  if (nettoyageProposé.has(classId)) return;
+  nettoyageProposé.add(classId);
+  const bad = elevesArr(classId).filter(e => clTrim(e.cl) && !clValide(e.cl));
+  if (!bad.length) return;
+  if (!confirm(`${bad.length} élève(s) de « ${classes[classId]?.nom} » ont un numéro à la place de la classe d'origine ` +
+    `(ex : ${clTrim(bad[0].cl)}) — c'est probablement leur date de naissance, importée par erreur.\n\nEffacer ces numéros ?`)) return;
+  const u = {};
+  bad.forEach(e => { u[`${ESPACE}/classes/${classId}/eleves/${e.id}/cl`] = null; });
+  await update(ref(db), u);
+}
 
 function showNoClass() {
   currentClassId = null;
@@ -2309,6 +2331,7 @@ function processLines(rows) {
       nom = prenom && nomFamille ? `${prenom} ${nomFamille}` : (nomFamille || prenom);
       sx  = normSexe(cols[2] || '');
       cl  = (cols[3] || '').trim();   // 4e colonne facultative : classe
+      if (!clValide(cl)) cl = '';     // ignore dates de naissance, numéros…
     } else if (cols.length === 2) {
       // Format : Prénom Nom | Sexe
       nom = (cols[0] || '').trim();
