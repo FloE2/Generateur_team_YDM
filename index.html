@@ -751,6 +751,22 @@ function isCompoClass() {
 }
 function optsOf(e) { return [...new Set((Array.isArray(e.opts) ? e.opts : []).map(normOpt))]; }
 
+// ── Tri « comme Pronote » : NOM de famille puis prénom ──
+// Le nom de famille = les mots écrits en MAJUSCULES (ex : "Dario BERROUANE HAVEZ")
+function splitPronote(full) {
+  const mots = String(full || '').trim().split(/\s+/);
+  const isUp = m => /\p{L}/u.test(m) && m === m.toLocaleUpperCase('fr');
+  const nom = mots.filter(isUp), prenom = mots.filter(m => !isUp(m));
+  // Pas de majuscules : on suppose "Prénom Nom"
+  if (!nom.length) return { nom: mots.slice(1).join(' ') || mots[0] || '', prenom: mots.length > 1 ? mots[0] : '' };
+  return { nom: nom.join(' '), prenom: prenom.join(' ') };
+}
+function cmpPronote(a, b) {
+  const A = splitPronote(a.nom), B = splitPronote(b.nom);
+  const opt = { sensitivity: 'base', ignorePunctuation: true };
+  return A.nom.localeCompare(B.nom, 'fr', opt) || A.prenom.localeCompare(B.prenom, 'fr', opt);
+}
+
 function elevesOf(classId) {
   return classes[classId]?.eleves || {};
 }
@@ -1310,7 +1326,7 @@ window.renderEleves = () => {
   const showCl = classesPresentes().length > 0;
   let L = curEleves().filter(e => (e.nom.toLowerCase().includes(q) || clTrim(e.cl).toLowerCase() === q) && (!fs || e.sx === fs)
     && (!fc || (fc === '__none' ? !clTrim(e.cl) : clTrim(e.cl) === fc)));
-  L.sort((a,b) => a.abs !== b.abs ? (a.abs ? 1 : -1) : a.nom.localeCompare(b.nom));
+  L.sort((a,b) => a.abs !== b.abs ? (a.abs ? 1 : -1) : cmpPronote(a, b));
 
   // Couleur selon niveau : nv5=vert(fort), nv3=jaune, nv1=rouge(faible)
   const nvColor = ['','#ea4335','#ff7043','#fbbc04','#8bc34a','#43a047'];
@@ -2966,7 +2982,7 @@ function renderEvalContent() {
   }
 
   const grid   = evalGrids[currentGrid];
-  const eleves = curEleves().filter(e => !e.abs).sort((a,b) => a.nom.localeCompare(b.nom));
+  const eleves = curEleves().filter(e => !e.abs).sort(cmpPronote);
   const total  = grid.criteres.reduce((s, c) => s + c.max, 0);
 
   // ─ Bandeau info + actions ─
@@ -3057,7 +3073,7 @@ function renderEvalContent() {
 // ── Export Excel éval ──────────────────────────────
 window.exportEvalExcel = () => {
   const grid = evalGrids[currentGrid]; if (!grid) return;
-  const eleves = curEleves().filter(e => !e.abs).sort((a,b) => a.nom.localeCompare(b.nom));
+  const eleves = curEleves().filter(e => !e.abs).sort(cmpPronote);
   const clsNom = classes[currentClassId]?.nom || '';
 
   const doExport = () => {
