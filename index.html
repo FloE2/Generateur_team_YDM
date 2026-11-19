@@ -590,6 +590,17 @@ tr:focus-within > td{background:#f3f8ff!important}
   </div>
 </div>
 
+<!-- MODAL CORBEILLE -->
+<div class="mo" id="modal-corbeille" onclick="if(event.target===this)closeCorbeille()">
+  <div class="moc" style="max-width:520px;max-height:85vh;overflow-y:auto">
+    <h3>♻️ Corbeille — restaurer une classe</h3>
+    <div id="corbeille-list"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:14px">
+      <button class="btn" style="background:var(--bg);color:var(--text)" onclick="closeCorbeille()">Fermer</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL IMPORT CSV/EXCEL -->
 <div class="mo" id="modal-import" onclick="if(event.target===this)closeImport()">
   <div class="moc" style="max-width:580px;display:flex;flex-direction:column;max-height:90vh;padding:0;overflow:hidden">
@@ -1054,6 +1065,7 @@ function renderClassBar() {
       <button class="del-cls" onclick="event.stopPropagation();deleteClass('${id}')" title="Supprimer">×</button>
     </span>`).join('');
   html += `<button class="btn-add-class" onclick="addClassPrompt()">＋ Nouvelle classe</button>`;
+  html += `<button class="btn-add-class" style="margin-left:auto" onclick="openCorbeille()" title="Restaurer une classe supprimée">♻️ Corbeille</button>`;
   G('class-bar').innerHTML = html;
 }
 
@@ -1137,8 +1149,82 @@ window.saveClass = async () => {
 window.deleteClass = async id => {
   const cls = classes[id]; if (!cls) return;
   const nb = Object.keys(cls.eleves || {}).length;
-  if (!confirm(`Supprimer la classe "${cls.nom}" et ses ${nb} élève(s) ?`)) return;
+  const rep = prompt(
+    `⚠️ SUPPRESSION DE LA CLASSE « ${cls.nom} »\n\n` +
+    `${nb} élève(s), leurs équipes et leurs évaluations seront supprimés.\n` +
+    `(La classe restera récupérable dans la ♻️ Corbeille.)\n\n` +
+    `Pour confirmer, tapez exactement le nom de la classe :`);
+  if (rep === null) return;
+  if (rep.trim().toLowerCase() !== String(cls.nom).trim().toLowerCase()) {
+    alert('Nom incorrect — la classe n\'a PAS été supprimée.');
+    return;
+  }
+  // Copie de sécurité dans la corbeille AVANT suppression
+  try {
+    await set(ref(db, `${ESPACE}/corbeille/${id}`), { ...cls, deletedAt: Date.now() });
+  } catch (e) {
+    alert('Impossible de sauvegarder la classe dans la corbeille — suppression annulée.\n\n(' + e.message + ')');
+    return;
+  }
   await remove(ref(db, `${ESPACE}/classes/${id}`));
+};
+
+// ── CORBEILLE : restaurer une classe supprimée ──────────
+const getOnce = path => new Promise((res, rej) => onValue(ref(db, path), res, rej, { onlyOnce: true }));
+let corbeilleData = {}, persoData = {};
+
+window.openCorbeille = async () => {
+  G('modal-corbeille').classList.add('open');
+  G('corbeille-list').innerHTML = '<span class="spinner"></span> Chargement…';
+  try { corbeilleData = (await getOnce(`${ESPACE}/corbeille`)).val() || {}; } catch (e) { corbeilleData = {}; }
+  try { persoData = (await getOnce(`users/${uid}/classes`)).val() || {}; } catch (e) { persoData = {}; }
+  renderCorbeille();
+};
+window.closeCorbeille = () => G('modal-corbeille').classList.remove('open');
+
+function renderCorbeille() {
+  const nbEl = c => Object.keys(c?.eleves || {}).length;
+  const nbEval = c => Object.keys(c?.eval || {}).length;
+  const existe = nom => Object.values(classes).some(c => String(c.nom).trim().toLowerCase() === String(nom).trim().toLowerCase());
+  const row = (titre, info, btn) => `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;margin-bottom:8px">
+      <div style="flex:1"><div style="font-weight:700">${titre}</div><div style="font-size:12px;color:var(--muted)">${info}</div></div>${btn}</div>`;
+
+  const del = Object.entries(corbeilleData).sort((a, b) => (b[1].deletedAt || 0) - (a[1].deletedAt || 0));
+  let html = `<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Classes supprimées</div>`;
+  html += del.length ? del.map(([id, c]) => row(`📚 ${c.nom}`,
+      `${nbEl(c)} élève(s) · ${nbEval(c)} grille(s) d'éval · supprimée le ${c.deletedAt ? new Date(c.deletedAt).toLocaleString('fr-FR') : '?'}`,
+      `<button class="btn btn-g btn-sm" onclick="restoreCorbeille('${id}')">♻️ Restaurer</button>`)).join('')
+    : `<div style="font-size:13px;color:var(--muted);margin-bottom:8px">Corbeille vide.</div>`;
+
+  const perso = Object.entries(persoData);
+  if (perso.length) {
+    html += `<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;margin:16px 0 8px">Ancien espace personnel (avant le partage)</div>`;
+    html += perso.map(([id, c]) => row(`📚 ${c.nom}${existe(c.nom) ? ' <span style="font-size:11px;color:var(--muted);font-weight:400">(existe déjà)</span>' : ''}`,
+      `${nbEl(c)} élève(s) · ${nbEval(c)} grille(s) d'éval`,
+      `<button class="btn btn-b btn-sm" onclick="restorePerso('${id}')">📥 Récupérer</button>`)).join('');
+  }
+  G('corbeille-list').innerHTML = html;
+}
+
+window.restoreCorbeille = async id => {
+  const c = corbeilleData[id]; if (!c) return;
+  const { deletedAt, ...data } = c;
+  const targetId = classes[id] ? push(ref(db, `${ESPACE}/classes`)).key : id;
+  await set(ref(db, `${ESPACE}/classes/${targetId}`), data);
+  await remove(ref(db, `${ESPACE}/corbeille/${id}`));
+  delete corbeilleData[id];
+  renderCorbeille();
+  alert(`✅ Classe « ${data.nom} » restaurée.`);
+};
+
+window.restorePerso = async id => {
+  const c = persoData[id]; if (!c) return;
+  const dup = Object.values(classes).some(x => String(x.nom).trim().toLowerCase() === String(c.nom).trim().toLowerCase());
+  const nom = dup ? `${c.nom} (récupérée)` : c.nom;
+  if (!confirm(`Copier « ${c.nom} » (${Object.keys(c.eleves || {}).length} élèves) depuis l'ancien espace personnel${dup ? ` sous le nom « ${nom} »` : ''} ?`)) return;
+  const r = push(ref(db, `${ESPACE}/classes`));
+  await set(r, { ...c, nom });
+  alert(`✅ Classe « ${nom} » récupérée.`);
 };
 
 // ── TABS ─────────────────────────────────────────────
